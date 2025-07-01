@@ -4,6 +4,8 @@ export type Invoice = {
   amount: number;
   status: 'paid' | 'unpaid' | 'overdue';
   date: string;
+  address?: string;
+  phone?: string;
 };
 
 export type Material = {

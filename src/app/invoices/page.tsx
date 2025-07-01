@@ -91,9 +91,8 @@ export default function InvoicesPage() {
       const batch = writeBatch(db);
       const invoicesCollection = collection(db, 'invoices');
       initialInvoices.forEach((invoice) => {
-        const { id, ...rest } = invoice;
         const docRef = doc(invoicesCollection);
-        batch.set(docRef, rest);
+        batch.set(docRef, invoice);
       });
       await batch.commit();
     } catch (error) {

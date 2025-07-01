@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, PlusCircle } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Printer } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -37,14 +37,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import type { Invoice } from '@/lib/types';
+import { Textarea } from '@/components/ui/textarea';
 
 const invoiceSchema = z.object({
-  customer: z.string().min(1, 'Customer name is required.'),
-  amount: z.coerce.number().positive('Amount must be a positive number.'),
-  status: z.enum(['paid', 'unpaid', 'overdue']),
   date: z.date({
     required_error: 'A date is required.',
   }),
+  customer: z.string().min(1, 'Customer name is required.'),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  amount: z.coerce.number().positive('Amount must be a positive number.'),
+  status: z.enum(['paid', 'unpaid', 'overdue']),
 });
 
 type AddInvoiceFormProps = {
@@ -56,19 +59,28 @@ export function AddInvoiceForm({ onAddInvoice }: AddInvoiceFormProps) {
   const form = useForm<z.infer<typeof invoiceSchema>>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
+      date: new Date(),
       customer: '',
+      address: '',
+      phone: '',
       amount: 0,
       status: 'unpaid',
-      date: new Date(),
     },
   });
 
   function onSubmit(values: z.infer<typeof invoiceSchema>) {
     onAddInvoice({
-        ...values,
-        date: values.date.toISOString(),
+      ...values,
+      date: values.date.toISOString(),
     });
-    form.reset();
+    form.reset({
+      date: new Date(),
+      customer: '',
+      address: '',
+      phone: '',
+      amount: 0,
+      status: 'unpaid',
+    });
     setOpen(false);
   }
 
@@ -79,7 +91,7 @@ export function AddInvoiceForm({ onAddInvoice }: AddInvoiceFormProps) {
           <PlusCircle className="mr-2 h-4 w-4" /> Add New Invoice
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Invoice</DialogTitle>
           <DialogDescription>
@@ -89,54 +101,6 @@ export function AddInvoiceForm({ onAddInvoice }: AddInvoiceFormProps) {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
-              control={form.control}
-              name="customer"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Customer Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Acme Inc." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Amount</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="e.g. 150.00" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="status"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="paid">Paid</SelectItem>
-                      <SelectItem value="unpaid">Unpaid</SelectItem>
-                      <SelectItem value="overdue">Overdue</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
               control={form.control}
               name="date"
               render={({ field }) => (
@@ -174,8 +138,92 @@ export function AddInvoiceForm({ onAddInvoice }: AddInvoiceFormProps) {
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="customer"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Customer Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Acme Inc." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="e.g. 123 Main St, Anytown USA"
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone</FormLabel>
+                  <FormControl>
+                    <Input type="tel" placeholder="e.g. 555-123-4567" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="e.g. 150.00" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                      <SelectItem value="overdue">Overdue</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
-              <Button type="submit">Create Invoice</Button>
+              <Button type="submit">
+                <Printer className="mr-2 h-4 w-4" />
+                Save and Print
+              </Button>
             </DialogFooter>
           </form>
         </Form>
