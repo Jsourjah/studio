@@ -165,7 +165,7 @@ export default function InvoicesPage() {
                 {invoices.map((invoice) => (
                   <TableRow key={invoice.id}>
                     <TableCell className="font-medium truncate max-w-[100px]">
-                      {invoice.id}
+                      {invoice.id.substring(0, 8).toUpperCase()}
                     </TableCell>
                     <TableCell>{invoice.customer}</TableCell>
                     <TableCell>

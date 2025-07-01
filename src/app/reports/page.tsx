@@ -165,7 +165,7 @@ export default function ReportsPage() {
             <TableBody>
               {recentPurchases.map((purchase) => (
                 <TableRow key={purchase.id}>
-                  <TableCell className="font-medium truncate max-w-[100px]">{purchase.id}</TableCell>
+                  <TableCell className="font-medium truncate max-w-[100px]">{purchase.id.substring(0, 8).toUpperCase()}</TableCell>
                   <TableCell>{purchase.supplier}</TableCell>
                   <TableCell>{format(new Date(purchase.date), 'MM/dd/yyyy')}</TableCell>
                   <TableCell>

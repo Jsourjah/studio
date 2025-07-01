@@ -135,7 +135,7 @@ export default function MaterialsPage() {
               <TableBody>
                 {materials.map((material) => (
                   <TableRow key={material.id}>
-                    <TableCell className="font-medium truncate max-w-[100px]">{material.id}</TableCell>
+                    <TableCell className="font-medium truncate max-w-[100px]">{material.id.substring(0, 8).toUpperCase()}</TableCell>
                     <TableCell>{material.name}</TableCell>
                     <TableCell>{material.quantity}</TableCell>
                     <TableCell className="text-right">
