@@ -2,15 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  collection,
-  onSnapshot,
-  query,
-  orderBy,
-  writeBatch,
-  doc,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import useLocalStorage from '@/hooks/use-local-storage';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -42,48 +34,29 @@ const statusStyles = {
     'bg-gray-500/20 text-gray-700 hover:bg-gray-500/30 dark:bg-gray-500/10 dark:text-gray-400',
 };
 
+// Function to generate a simple unique ID
+const generateUniqueId = () => {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
+
 export default function PurchasesPage() {
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [purchases, setPurchases] = useLocalStorage<Purchase[]>('purchases', []);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'purchases'), orderBy('date', 'desc'));
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const purchasesData: Purchase[] = [];
-        querySnapshot.forEach((doc) => {
-          purchasesData.push({ id: doc.id, ...doc.data() } as Purchase);
-        });
-        setPurchases(purchasesData);
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error fetching purchases:', error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
+    setLoading(false);
   }, []);
   
-  const seedData = async () => {
+  const seedData = () => {
     setIsSeeding(true);
-    try {
-      const batch = writeBatch(db);
-      const purchasesCollection = collection(db, 'purchases');
-      initialPurchases.forEach((purchase) => {
-        const { id, ...rest } = purchase;
-        const docRef = doc(purchasesCollection);
-        batch.set(docRef, rest);
-      });
-      await batch.commit();
-    } catch (error) {
-      console.error("Error seeding purchases: ", error);
-    } finally {
-      setIsSeeding(false);
-    }
+    const seededPurchases = initialPurchases.map(purchase => ({
+      ...purchase,
+      id: generateUniqueId(),
+    }));
+    setPurchases(seededPurchases);
+    setIsSeeding(false);
   };
 
   if (loading) {
@@ -93,6 +66,8 @@ export default function PurchasesPage() {
       </div>
     );
   }
+
+  const sortedPurchases = [...purchases].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -146,7 +121,7 @@ export default function PurchasesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {purchases.map((purchase) => (
+                {sortedPurchases.map((purchase) => (
                   <TableRow key={purchase.id}>
                     <TableCell className="font-medium truncate max-w-[100px]">{purchase.id.substring(0, 8).toUpperCase()}</TableCell>
                     <TableCell>{purchase.supplier}</TableCell>

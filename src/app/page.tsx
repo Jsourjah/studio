@@ -2,8 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import useLocalStorage from '@/hooks/use-local-storage';
 import {
   Card,
   CardContent,
@@ -34,34 +33,22 @@ import { format } from 'date-fns';
 import { DashboardChart } from '@/components/dashboard-chart';
 
 export default function Dashboard() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [invoices] = useLocalStorage<Invoice[]>('invoices', []);
+  const [purchases] = useLocalStorage<Purchase[]>('purchases', []);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const qInvoices = query(collection(db, 'invoices'), orderBy('date', 'desc'));
-    const unsubscribeInvoices = onSnapshot(qInvoices, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
-      setInvoices(data);
-      if(loading) setLoading(false);
-    });
+    setLoading(false);
+  }, []);
 
-    const qPurchases = query(collection(db, 'purchases'));
-     const unsubscribePurchases = onSnapshot(qPurchases, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Purchase));
-      setPurchases(data);
-    });
-
-    return () => {
-      unsubscribeInvoices();
-      unsubscribePurchases();
-    };
-  }, [loading]);
-
-  const recentInvoices = invoices.slice(0, 5);
+  const recentInvoices = [...invoices]
+    .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
+    
   const totalRevenue = invoices
     .filter((invoice) => invoice.status === 'paid')
     .reduce((sum, invoice) => sum + invoice.amount, 0);
+
   const unpaidAmount = invoices
     .filter((invoice) => invoice.status === 'unpaid')
     .reduce((sum, invoice) => sum + invoice.amount, 0);

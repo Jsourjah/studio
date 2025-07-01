@@ -2,14 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  collection,
-  onSnapshot,
-  query,
-  writeBatch,
-  doc,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import useLocalStorage from '@/hooks/use-local-storage';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -30,48 +23,28 @@ import { PlusCircle, Loader2, Database } from 'lucide-react';
 import { materials as initialMaterials } from '@/lib/data';
 import type { Material } from '@/lib/types';
 
+// Function to generate a simple unique ID
+const generateUniqueId = () => {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
 export default function MaterialsPage() {
-  const [materials, setMaterials] = useState<Material[]>([]);
+  const [materials, setMaterials] = useLocalStorage<Material[]>('materials', []);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'materials'));
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const materialsData: Material[] = [];
-        querySnapshot.forEach((doc) => {
-          materialsData.push({ id: doc.id, ...doc.data() } as Material);
-        });
-        setMaterials(materialsData);
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error fetching materials:', error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
+    setLoading(false);
   }, []);
   
-  const seedData = async () => {
+  const seedData = () => {
     setIsSeeding(true);
-    try {
-      const batch = writeBatch(db);
-      const materialsCollection = collection(db, 'materials');
-      initialMaterials.forEach((material) => {
-        const { id, ...rest } = material;
-        const docRef = doc(materialsCollection);
-        batch.set(docRef, rest);
-      });
-      await batch.commit();
-    } catch (error) {
-      console.error("Error seeding materials: ", error);
-    } finally {
-      setIsSeeding(false);
-    }
+    const seededMaterials = initialMaterials.map(material => ({
+      ...material,
+      id: generateUniqueId(),
+    }));
+    setMaterials(seededMaterials);
+    setIsSeeding(false);
   };
 
   if (loading) {

@@ -2,8 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import useLocalStorage from '@/hooks/use-local-storage';
 import {
   Card,
   CardContent,
@@ -35,31 +34,13 @@ import { MoreHorizontal, Loader2 } from 'lucide-react';
 
 
 export default function ReportsPage() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [invoices] = useLocalStorage<Invoice[]>('invoices', []);
+  const [materials] = useLocalStorage<Material[]>('materials', []);
+  const [purchases] = useLocalStorage<Purchase[]>('purchases', []);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribers = [
-      onSnapshot(collection(db, 'invoices'), (snapshot) => {
-        setInvoices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice)));
-      }),
-      onSnapshot(collection(db, 'materials'), (snapshot) => {
-        setMaterials(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Material)));
-      }),
-      onSnapshot(collection(db, 'purchases'), (snapshot) => {
-        setPurchases(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Purchase)));
-      }),
-    ];
-
-    Promise.all([
-      new Promise(resolve => onSnapshot(collection(db, 'invoices'), resolve)),
-      new Promise(resolve => onSnapshot(collection(db, 'materials'), resolve)),
-      new Promise(resolve => onSnapshot(collection(db, 'purchases'), resolve)),
-    ]).then(() => setLoading(false));
-
-    return () => unsubscribers.forEach(unsub => unsub());
+    setLoading(false);
   }, []);
 
   const totalRevenue = invoices
@@ -79,7 +60,7 @@ export default function ReportsPage() {
     .filter((purchase) => purchase.status === 'completed')
     .reduce((sum, purchase) => sum + purchase.totalAmount, 0);
   
-  const recentPurchases = purchases
+  const recentPurchases = [...purchases]
     .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
   

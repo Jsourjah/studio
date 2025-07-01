@@ -2,16 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  collection,
-  onSnapshot,
-  addDoc,
-  query,
-  orderBy,
-  writeBatch,
-  doc,
-} from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import useLocalStorage from '@/hooks/use-local-storage';
 import {
   Card,
   CardContent,
@@ -51,55 +42,38 @@ const statusStyles = {
     'bg-red-500/20 text-red-700 hover:bg-red-500/30 dark:bg-red-500/10 dark:text-red-400',
 };
 
+// Function to generate a simple unique ID
+const generateUniqueId = () => {
+  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+};
+
 export default function InvoicesPage() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoices, setInvoices] = useLocalStorage<Invoice[]>('invoices', []);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
-
+  
+  // This effect will run once on mount to handle initial loading state
+  // and prevent hydration mismatch issues.
   useEffect(() => {
-    const q = query(collection(db, 'invoices'), orderBy('date', 'desc'));
-    const unsubscribe = onSnapshot(
-      q,
-      (querySnapshot) => {
-        const invoicesData: Invoice[] = [];
-        querySnapshot.forEach((doc) => {
-          invoicesData.push({ id: doc.id, ...doc.data() } as Invoice);
-        });
-        setInvoices(invoicesData);
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error fetching invoices:', error);
-        setLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
+    setLoading(false);
   }, []);
 
-  const handleAddInvoice = async (newInvoiceData: Omit<Invoice, 'id'>) => {
-    try {
-      await addDoc(collection(db, 'invoices'), newInvoiceData);
-    } catch (error) {
-      console.error('Error adding invoice: ', error);
-    }
+  const handleAddInvoice = (newInvoiceData: Omit<Invoice, 'id'>) => {
+    const newInvoice: Invoice = {
+      id: generateUniqueId(),
+      ...newInvoiceData,
+    };
+    setInvoices(prevInvoices => [...prevInvoices, newInvoice]);
   };
 
-  const seedData = async () => {
+  const seedData = () => {
     setIsSeeding(true);
-    try {
-      const batch = writeBatch(db);
-      const invoicesCollection = collection(db, 'invoices');
-      initialInvoices.forEach((invoice) => {
-        const docRef = doc(invoicesCollection);
-        batch.set(docRef, invoice);
-      });
-      await batch.commit();
-    } catch (error) {
-      console.error("Error seeding invoices: ", error);
-    } finally {
-      setIsSeeding(false);
-    }
+    const seededInvoices = initialInvoices.map(invoice => ({
+      ...invoice,
+      id: generateUniqueId(),
+    }));
+    setInvoices(seededInvoices);
+    setIsSeeding(false);
   };
 
   if (loading) {
@@ -109,6 +83,8 @@ export default function InvoicesPage() {
       </div>
     );
   }
+
+  const sortedInvoices = [...invoices].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -162,7 +138,7 @@ export default function InvoicesPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((invoice) => (
+                {sortedInvoices.map((invoice) => (
                   <TableRow key={invoice.id}>
                     <TableCell className="font-medium truncate max-w-[100px]">
                       {invoice.id.substring(0, 8).toUpperCase()}
