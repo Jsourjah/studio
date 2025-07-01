@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useLocalStorage } from '@/hooks/use-local-storage';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -16,7 +20,8 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { PlusCircle } from 'lucide-react';
-import { purchases } from '@/lib/data';
+import { purchases as initialPurchases } from '@/lib/data';
+import type { Purchase } from '@/lib/types';
 import { format } from 'date-fns';
 
 const statusStyles = {
@@ -29,6 +34,8 @@ const statusStyles = {
 };
 
 export default function PurchasesPage() {
+  const [purchases] = useLocalStorage<Purchase[]>('purchases', initialPurchases);
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">

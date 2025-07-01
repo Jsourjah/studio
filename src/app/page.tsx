@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useLocalStorage } from '@/hooks/use-local-storage';
 import {
   Card,
   CardContent,
@@ -21,18 +25,24 @@ import {
   ShoppingCart,
 } from 'lucide-react';
 
-import { monthlySummary, invoices as allInvoices } from '@/lib/data';
+import { monthlySummary, invoices as initialInvoices, purchases as initialPurchases } from '@/lib/data';
+import type { Invoice, Purchase } from '@/lib/types';
 import { format } from 'date-fns';
 import { DashboardChart } from '@/components/dashboard-chart';
 
 export default function Dashboard() {
-  const recentInvoices = allInvoices.slice(0, 5);
-  const totalRevenue = allInvoices
+  const [invoices] = useLocalStorage<Invoice[]>('invoices', initialInvoices);
+  const [purchases] = useLocalStorage<Purchase[]>('purchases', initialPurchases);
+
+  const recentInvoices = invoices.slice(0, 5);
+  const totalRevenue = invoices
     .filter((invoice) => invoice.status === 'paid')
     .reduce((sum, invoice) => sum + invoice.amount, 0);
-  const unpaidAmount = allInvoices
+  const unpaidAmount = invoices
     .filter((invoice) => invoice.status === 'unpaid')
     .reduce((sum, invoice) => sum + invoice.amount, 0);
+  
+  const activePurchases = purchases.filter(p => p.status === 'pending').length;
 
   const chartConfig = {
     revenue: {
@@ -100,7 +110,7 @@ export default function Dashboard() {
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+12</div>
+            <div className="text-2xl font-bold">+{activePurchases}</div>
             <p className="text-xs text-muted-foreground">
               Currently pending purchases
             </p>

@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useLocalStorage } from '@/hooks/use-local-storage';
 import {
   Card,
   CardContent,
@@ -14,7 +18,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { invoices, materials, purchases } from '@/lib/data';
+import { invoices as initialInvoices, materials as initialMaterials, purchases as initialPurchases } from '@/lib/data';
+import type { Invoice, Material, Purchase } from '@/lib/types';
 import { format } from 'date-fns';
 import { ReportGenerator } from '@/components/report-generator';
 import { Button } from '@/components/ui/button';
@@ -29,6 +34,10 @@ import { MoreHorizontal } from 'lucide-react';
 
 
 export default function ReportsPage() {
+  const [invoices] = useLocalStorage<Invoice[]>('invoices', initialInvoices);
+  const [materials] = useLocalStorage<Material[]>('materials', initialMaterials);
+  const [purchases] = useLocalStorage<Purchase[]>('purchases', initialPurchases);
+
   const totalRevenue = invoices
     .filter((invoice) => invoice.status === 'paid')
     .reduce((sum, invoice) => sum + invoice.amount, 0);

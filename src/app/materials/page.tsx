@@ -1,3 +1,7 @@
+
+'use client';
+
+import { useLocalStorage } from '@/hooks/use-local-storage';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,9 +19,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { PlusCircle } from 'lucide-react';
-import { materials } from '@/lib/data';
+import { materials as initialMaterials } from '@/lib/data';
+import type { Material } from '@/lib/types';
 
 export default function MaterialsPage() {
+  const [materials] = useLocalStorage<Material[]>('materials', initialMaterials);
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">

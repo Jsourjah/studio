@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 import {
   Card,
   CardContent,
@@ -42,7 +43,7 @@ const statusStyles = {
 
 
 export default function InvoicesPage() {
-  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
+  const [invoices, setInvoices] = useLocalStorage<Invoice[]>('invoices', initialInvoices);
 
   const handleAddInvoice = (newInvoiceData: Omit<Invoice, 'id'>) => {
     const newInvoice: Invoice = {
