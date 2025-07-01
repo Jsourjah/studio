@@ -1,4 +1,6 @@
-import { Button } from '@/components/ui/button';
+'use client';
+
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -15,8 +17,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, MoreHorizontal } from 'lucide-react';
-import { invoices } from '@/lib/data';
+import { MoreHorizontal } from 'lucide-react';
+import { invoices as initialInvoices } from '@/lib/data';
+import type { Invoice } from '@/lib/types';
 import { format } from 'date-fns';
 import {
   DropdownMenu,
@@ -25,6 +28,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { AddInvoiceForm } from '@/components/add-invoice-form';
+import { Button } from '@/components/ui/button';
 
 const statusStyles = {
   paid:
@@ -37,14 +42,22 @@ const statusStyles = {
 
 
 export default function InvoicesPage() {
+  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
+
+  const handleAddInvoice = (newInvoiceData: Omit<Invoice, 'id'>) => {
+    const newInvoice: Invoice = {
+      id: `INV-${String(invoices.length + 1).padStart(3, '0')}`,
+      ...newInvoiceData,
+    };
+    setInvoices([newInvoice, ...invoices]);
+  };
+
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Invoices</h2>
         <div className="flex items-center space-x-2">
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add New Invoice
-          </Button>
+          <AddInvoiceForm onAddInvoice={handleAddInvoice} />
         </div>
       </div>
       
