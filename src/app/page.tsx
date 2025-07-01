@@ -16,19 +16,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import {
   BarChart,
-  Boxes,
   CreditCard,
   DollarSign,
   ShoppingCart,
 } from 'lucide-react';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart';
-import { Bar, CartesianGrid, XAxis, YAxis, BarChart as RechartsBarChart } from 'recharts';
+
 import { monthlySummary, invoices as allInvoices } from '@/lib/data';
 import { format } from 'date-fns';
+import { DashboardChart } from '@/components/dashboard-chart';
 
 export default function Dashboard() {
   const recentInvoices = allInvoices.slice(0, 5);
@@ -119,28 +114,7 @@ export default function Dashboard() {
             <CardTitle>Overview</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
-              <RechartsBarChart data={monthlySummary}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  tickMargin={10}
-                  axisLine={false}
-                />
-                <YAxis
-                  tickLine={false}
-                  axisLine={false}
-                  tickMargin={10}
-                  tickFormatter={(value) => `$${Number(value) / 1000}k`}
-                />
-                <ChartTooltip
-                  content={<ChartTooltipContent />}
-                />
-                <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
-                <Bar dataKey="purchases" fill="var(--color-purchases)" radius={4} />
-              </RechartsBarChart>
-            </ChartContainer>
+            <DashboardChart data={monthlySummary} chartConfig={chartConfig} />
           </CardContent>
         </Card>
         <Card className="lg:col-span-3">
