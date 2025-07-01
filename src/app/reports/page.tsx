@@ -1,7 +1,9 @@
 
 'use client';
 
-import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useState, useEffect } from 'react';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import {
   Card,
   CardContent,
@@ -18,7 +20,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { invoices as initialInvoices, materials as initialMaterials, purchases as initialPurchases } from '@/lib/data';
 import type { Invoice, Material, Purchase } from '@/lib/types';
 import { format } from 'date-fns';
 import { ReportGenerator } from '@/components/report-generator';
@@ -30,13 +31,36 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreHorizontal, Loader2 } from 'lucide-react';
 
 
 export default function ReportsPage() {
-  const [invoices] = useLocalStorage<Invoice[]>('invoices', initialInvoices);
-  const [materials] = useLocalStorage<Material[]>('materials', initialMaterials);
-  const [purchases] = useLocalStorage<Purchase[]>('purchases', initialPurchases);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribers = [
+      onSnapshot(collection(db, 'invoices'), (snapshot) => {
+        setInvoices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice)));
+      }),
+      onSnapshot(collection(db, 'materials'), (snapshot) => {
+        setMaterials(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Material)));
+      }),
+      onSnapshot(collection(db, 'purchases'), (snapshot) => {
+        setPurchases(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Purchase)));
+      }),
+    ];
+
+    Promise.all([
+      new Promise(resolve => onSnapshot(collection(db, 'invoices'), resolve)),
+      new Promise(resolve => onSnapshot(collection(db, 'materials'), resolve)),
+      new Promise(resolve => onSnapshot(collection(db, 'purchases'), resolve)),
+    ]).then(() => setLoading(false));
+
+    return () => unsubscribers.forEach(unsub => unsub());
+  }, []);
 
   const totalRevenue = invoices
     .filter((invoice) => invoice.status === 'paid')
@@ -55,7 +79,9 @@ export default function ReportsPage() {
     .filter((purchase) => purchase.status === 'completed')
     .reduce((sum, purchase) => sum + purchase.totalAmount, 0);
   
-  const recentPurchases = purchases.slice(0, 5);
+  const recentPurchases = purchases
+    .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 5);
   
   const statusStyles = {
     completed:
@@ -65,7 +91,14 @@ export default function ReportsPage() {
     cancelled:
       'bg-gray-500/20 text-gray-700 hover:bg-gray-500/30 dark:bg-gray-500/10 dark:text-gray-400',
   };
-
+  
+  if (loading) {
+    return (
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <ReportGenerator>
@@ -132,7 +165,7 @@ export default function ReportsPage() {
             <TableBody>
               {recentPurchases.map((purchase) => (
                 <TableRow key={purchase.id}>
-                  <TableCell className="font-medium">{purchase.id}</TableCell>
+                  <TableCell className="font-medium truncate max-w-[100px]">{purchase.id}</TableCell>
                   <TableCell>{purchase.supplier}</TableCell>
                   <TableCell>{format(new Date(purchase.date), 'MM/dd/yyyy')}</TableCell>
                   <TableCell>

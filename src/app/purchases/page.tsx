@@ -1,7 +1,16 @@
 
 'use client';
 
-import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useState, useEffect } from 'react';
+import {
+  collection,
+  onSnapshot,
+  query,
+  orderBy,
+  writeBatch,
+  doc,
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -19,7 +28,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2, Database } from 'lucide-react';
 import { purchases as initialPurchases } from '@/lib/data';
 import type { Purchase } from '@/lib/types';
 import { format } from 'date-fns';
@@ -34,7 +43,56 @@ const statusStyles = {
 };
 
 export default function PurchasesPage() {
-  const [purchases] = useLocalStorage<Purchase[]>('purchases', initialPurchases);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isSeeding, setIsSeeding] = useState(false);
+
+  useEffect(() => {
+    const q = query(collection(db, 'purchases'), orderBy('date', 'desc'));
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const purchasesData: Purchase[] = [];
+        querySnapshot.forEach((doc) => {
+          purchasesData.push({ id: doc.id, ...doc.data() } as Purchase);
+        });
+        setPurchases(purchasesData);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error fetching purchases:', error);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
+  
+  const seedData = async () => {
+    setIsSeeding(true);
+    try {
+      const batch = writeBatch(db);
+      const purchasesCollection = collection(db, 'purchases');
+      initialPurchases.forEach((purchase) => {
+        const { id, ...rest } = purchase;
+        const docRef = doc(purchasesCollection);
+        batch.set(docRef, rest);
+      });
+      await batch.commit();
+    } catch (error) {
+      console.error("Error seeding purchases: ", error);
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -46,47 +104,77 @@ export default function PurchasesPage() {
           </Button>
         </div>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Purchase Orders</CardTitle>
-          <CardDescription>
-            Monitor all your purchase orders and their statuses.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Purchase ID</TableHead>
-                <TableHead>Supplier</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Items</TableHead>
-                <TableHead className="text-right">Total Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {purchases.map((purchase) => (
-                <TableRow key={purchase.id}>
-                  <TableCell className="font-medium">{purchase.id}</TableCell>
-                  <TableCell>{purchase.supplier}</TableCell>
-                  <TableCell>{format(new Date(purchase.date), 'MM/dd/yyyy')}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={statusStyles[purchase.status]}>
-                      {purchase.status.charAt(0).toUpperCase() + purchase.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">{purchase.itemCount}</TableCell>
-                  <TableCell className="text-right font-medium">
-                    ${purchase.totalAmount.toFixed(2)}
-                  </TableCell>
+
+      {purchases.length === 0 ? (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>No Purchases Found</CardTitle>
+            <CardDescription>
+              Your purchase list is empty. You can add a new purchase or load
+              sample data to get started.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={seedData} disabled={isSeeding}>
+              {isSeeding ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Database className="mr-2 h-4 w-4" />
+              )}
+              Load Sample Purchases
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Purchase Orders</CardTitle>
+            <CardDescription>
+              Monitor all your purchase orders and their statuses.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Purchase ID</TableHead>
+                  <TableHead>Supplier</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Items</TableHead>
+                  <TableHead className="text-right">Total Amount</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+              </TableHeader>
+              <TableBody>
+                {purchases.map((purchase) => (
+                  <TableRow key={purchase.id}>
+                    <TableCell className="font-medium truncate max-w-[100px]">{purchase.id}</TableCell>
+                    <TableCell>{purchase.supplier}</TableCell>
+                    <TableCell>
+                      {format(new Date(purchase.date), 'MM/dd/yyyy')}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="outline"
+                        className={statusStyles[purchase.status]}
+                      >
+                        {purchase.status.charAt(0).toUpperCase() +
+                          purchase.status.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {purchase.itemCount}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      ${purchase.totalAmount.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

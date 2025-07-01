@@ -1,7 +1,9 @@
 
 'use client';
 
-import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useState, useEffect } from 'react';
+import { collection, onSnapshot, query, orderBy, limit } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import {
   Card,
   CardContent,
@@ -23,16 +25,38 @@ import {
   CreditCard,
   DollarSign,
   ShoppingCart,
+  Loader2,
 } from 'lucide-react';
 
-import { monthlySummary, invoices as initialInvoices, purchases as initialPurchases } from '@/lib/data';
+import { monthlySummary } from '@/lib/data';
 import type { Invoice, Purchase } from '@/lib/types';
 import { format } from 'date-fns';
 import { DashboardChart } from '@/components/dashboard-chart';
 
 export default function Dashboard() {
-  const [invoices] = useLocalStorage<Invoice[]>('invoices', initialInvoices);
-  const [purchases] = useLocalStorage<Purchase[]>('purchases', initialPurchases);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const qInvoices = query(collection(db, 'invoices'), orderBy('date', 'desc'));
+    const unsubscribeInvoices = onSnapshot(qInvoices, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
+      setInvoices(data);
+      if(loading) setLoading(false);
+    });
+
+    const qPurchases = query(collection(db, 'purchases'));
+     const unsubscribePurchases = onSnapshot(qPurchases, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Purchase));
+      setPurchases(data);
+    });
+
+    return () => {
+      unsubscribeInvoices();
+      unsubscribePurchases();
+    };
+  }, [loading]);
 
   const recentInvoices = invoices.slice(0, 5);
   const totalRevenue = invoices
@@ -54,6 +78,14 @@ export default function Dashboard() {
       color: 'hsl(var(--chart-2))',
     },
   };
+  
+  if (loading) {
+    return (
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
