@@ -1,162 +1,135 @@
-"use client";
-
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { checkReportAnomaly } from './actions';
-import { ReportAnomalyDetectionOutput } from '@/ai/flows/report-anomaly-detection';
-import { Loader2, Sparkles, FileDown, AlertTriangle } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-
-const sampleCurrentReport = JSON.stringify({
-  "total_sales": 12500,
-  "net_profit": 3500,
-  "new_customers": 15,
-  "customer_churn_rate": 0.25,
-  "average_sale_value": 833
-}, null, 2);
-
-const samplePastReports = JSON.stringify({
-  "monthly_averages": {
-    "total_sales": 8200,
-    "net_profit": 2100,
-    "new_customers": 12,
-    "customer_churn_rate": 0.05,
-    "average_sale_value": 683
-  }
-}, null, 2);
-
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { invoices, materials, purchases } from '@/lib/data';
+import { format } from 'date-fns';
 
 export default function ReportsPage() {
-  const [currentReportData, setCurrentReportData] = useState(sampleCurrentReport);
-  const [pastReportData, setPastReportData] = useState(samplePastReports);
-  const [isLoading, setIsLoading] = useState(false);
-  const [aiResult, setAiResult] = useState<ReportAnomalyDetectionOutput | null>(null);
-  const { toast } = useToast();
+  const totalRevenue = invoices
+    .filter((invoice) => invoice.status === 'paid')
+    .reduce((sum, invoice) => sum + invoice.amount, 0);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setAiResult(null);
+  const outstandingRevenue = invoices
+    .filter((invoice) => invoice.status === 'unpaid' || invoice.status === 'overdue')
+    .reduce((sum, invoice) => sum + invoice.amount, 0);
 
-    try {
-      JSON.parse(currentReportData);
-      JSON.parse(pastReportData);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Invalid JSON format",
-        description: "Please ensure both data fields contain valid JSON.",
-      });
-      setIsLoading(false);
-      return;
-    }
+  const totalInventoryValue = materials.reduce(
+    (sum, material) => sum + material.quantity * material.costPerUnit,
+    0
+  );
 
-    const result = await checkReportAnomaly({ currentReportData, pastReportData });
-
-    if (result.success) {
-      setAiResult(result.data);
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: result.error,
-      });
-    }
-
-    setIsLoading(false);
+  const totalPurchaseAmount = purchases
+    .filter((purchase) => purchase.status === 'completed')
+    .reduce((sum, purchase) => sum + purchase.totalAmount, 0);
+  
+  const recentPurchases = purchases.slice(0, 5);
+  
+  const statusStyles = {
+    completed:
+      'bg-green-500/20 text-green-700 hover:bg-green-500/30 dark:bg-green-500/10 dark:text-green-400',
+    pending:
+      'bg-amber-500/20 text-amber-700 hover:bg-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400',
+    cancelled:
+      'bg-gray-500/20 text-gray-700 hover:bg-gray-500/30 dark:bg-gray-500/10 dark:text-gray-400',
   };
+
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Reports</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Business Report</h2>
+      </div>
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Revenue</CardTitle>
+            <CardDescription>From paid invoices</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">${totalRevenue.toLocaleString('en-US')}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Outstanding Revenue</CardTitle>
+            <CardDescription>Unpaid & Overdue</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">${outstandingRevenue.toLocaleString('en-US')}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Inventory Value</CardTitle>
+            <CardDescription>Total cost of materials</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">${totalInventoryValue.toLocaleString('en-US')}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Completed Purchases</CardTitle>
+            <CardDescription>Total spend</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">${totalPurchaseAmount.toLocaleString('en-US')}</p>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
-        <form onSubmit={handleSubmit}>
-          <CardHeader>
-            <CardTitle>Monthly Report Anomaly Detection</CardTitle>
-            <CardDescription>
-              Generate a monthly report and use AI to detect any significant anomalies compared to past data.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="current-report">Current Report Data (JSON)</Label>
-                <Textarea
-                  id="current-report"
-                  value={currentReportData}
-                  onChange={(e) => setCurrentReportData(e.target.value)}
-                  className="min-h-[200px] font-mono text-sm"
-                  placeholder="Enter current month's report data in JSON format."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="past-reports">Past Reports Data (JSON)</Label>
-                <Textarea
-                  id="past-reports"
-                  value={pastReportData}
-                  onChange={(e) => setPastReportData(e.target.value)}
-                  className="min-h-[200px] font-mono text-sm"
-                  placeholder="Enter past months' aggregated data in JSON format."
-                />
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
-              )}
-              Generate & Analyze Report
-            </Button>
-            <Button variant="outline" disabled>
-              <FileDown className="mr-2 h-4 w-4" />
-              Download as PDF
-            </Button>
-          </CardFooter>
-        </form>
+        <CardHeader>
+          <CardTitle>Recent Purchases</CardTitle>
+          <CardDescription>
+            A list of the 5 most recent purchase orders.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Purchase ID</TableHead>
+                <TableHead>Supplier</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Total Amount</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {recentPurchases.map((purchase) => (
+                <TableRow key={purchase.id}>
+                  <TableCell className="font-medium">{purchase.id}</TableCell>
+                  <TableCell>{purchase.supplier}</TableCell>
+                  <TableCell>{format(new Date(purchase.date), 'MM/dd/yyyy')}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={statusStyles[purchase.status]}>
+                      {purchase.status.charAt(0).toUpperCase() + purchase.status.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    ${purchase.totalAmount.toFixed(2)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
       </Card>
-
-      {aiResult && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Analysis Result</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {aiResult.hasAnomaly ? (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Anomaly Detected!</AlertTitle>
-                <AlertDescription>
-                  <p className="whitespace-pre-wrap">{aiResult.anomalyExplanation}</p>
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <Alert>
-                <AlertTitle>No Significant Anomalies Detected</AlertTitle>
-                <AlertDescription>
-                  <p className="whitespace-pre-wrap">{aiResult.anomalyExplanation}</p>
-                </AlertDescription>
-              </Alert>
-            )}
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
