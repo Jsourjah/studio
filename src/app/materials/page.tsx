@@ -58,10 +58,10 @@ export default function MaterialsPage() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Materials</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Items/Services</h2>
         <div className="flex items-center space-x-2">
           <Button>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add New Material
+            <PlusCircle className="mr-2 h-4 w-4" /> Add New Item/Service
           </Button>
         </div>
       </div>
@@ -69,9 +69,9 @@ export default function MaterialsPage() {
       {materials.length === 0 ? (
          <Card className="mt-6">
           <CardHeader>
-            <CardTitle>No Materials Found</CardTitle>
+            <CardTitle>No Items or Services Found</CardTitle>
             <CardDescription>
-              Your material list is empty. You can add a new material or load
+              Your item/service list is empty. You can add a new one or load
               sample data to get started.
             </CardDescription>
           </CardHeader>
@@ -82,23 +82,23 @@ export default function MaterialsPage() {
               ) : (
                 <Database className="mr-2 h-4 w-4" />
               )}
-              Load Sample Materials
+              Load Sample Items
             </Button>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Material Inventory</CardTitle>
+            <CardTitle>Item & Service List</CardTitle>
             <CardDescription>
-              Keep track of your material stock and costs.
+              Manage your reusable items and services.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Material ID</TableHead>
+                  <TableHead>Item/Service ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Quantity in Stock</TableHead>
                   <TableHead className="text-right">Cost per Unit</TableHead>

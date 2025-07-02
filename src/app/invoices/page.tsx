@@ -21,7 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { MoreHorizontal, Loader2, Database } from 'lucide-react';
 import { invoices as initialInvoices } from '@/lib/data';
-import type { Invoice } from '@/lib/types';
+import type { Invoice, Material } from '@/lib/types';
 import { format } from 'date-fns';
 import {
   DropdownMenu,
@@ -49,6 +49,7 @@ const generateUniqueId = () => {
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useLocalStorage<Invoice[]>('invoices', []);
+  const [materials] = useLocalStorage<Material[]>('materials', []);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
   
@@ -91,7 +92,7 @@ export default function InvoicesPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Invoices</h2>
         <div className="flex items-center space-x-2">
-          <AddInvoiceForm onAddInvoice={handleAddInvoice} />
+          <AddInvoiceForm onAddInvoice={handleAddInvoice} materials={materials} />
         </div>
       </div>
 

@@ -37,8 +37,9 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import type { Invoice } from '@/lib/types';
+import type { Invoice, Material } from '@/lib/types';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 
 const invoiceSchema = z.object({
   date: z.date({
@@ -54,9 +55,10 @@ const invoiceSchema = z.object({
 
 type AddInvoiceFormProps = {
   onAddInvoice: (newInvoice: Omit<Invoice, 'id'>) => void;
+  materials: Material[];
 };
 
-export function AddInvoiceForm({ onAddInvoice }: AddInvoiceFormProps) {
+export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps) {
   const [open, setOpen] = useState(false);
   const form = useForm<z.infer<typeof invoiceSchema>>({
     resolver: zodResolver(invoiceSchema),
@@ -87,6 +89,14 @@ export function AddInvoiceForm({ onAddInvoice }: AddInvoiceFormProps) {
     });
     setOpen(false);
   }
+
+  const handleMaterialClick = (materialName: string) => {
+    const currentItems = form.getValues('items');
+    const newItems = currentItems
+      ? `${currentItems}, ${materialName}`
+      : materialName;
+    form.setValue('items', newItems, { shouldValidate: true });
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -204,6 +214,25 @@ export function AddInvoiceForm({ onAddInvoice }: AddInvoiceFormProps) {
                       {...field}
                     />
                   </FormControl>
+                  {materials && materials.length > 0 && (
+                    <div className="pt-2">
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Click to add from your item list:
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {materials.map((material) => (
+                          <Badge
+                            key={material.id}
+                            variant="secondary"
+                            className="cursor-pointer"
+                            onClick={() => handleMaterialClick(material.name)}
+                          >
+                            {material.name}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

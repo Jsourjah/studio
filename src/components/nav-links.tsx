@@ -8,7 +8,7 @@ import Link from 'next/link';
 const navLinks = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/invoices', label: 'Invoices', icon: FileText },
-  { href: '/materials', label: 'Materials', icon: Boxes },
+  { href: '/materials', label: 'Items/Services', icon: Boxes },
   { href: '/purchases', label: 'Purchases', icon: ShoppingCart },
   { href: '/reports', label: 'Reports', icon: FilePieChart },
 ];
