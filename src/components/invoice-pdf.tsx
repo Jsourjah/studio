@@ -19,10 +19,18 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
 
   return (
     <div
-      className="bg-white text-black p-10 font-sans"
+      className="text-black font-sans relative"
       style={{ width: '612px', minHeight: '792px', fontFamily: 'Inter, sans-serif' }}
     >
-      <div className="relative h-full flex flex-col pt-32">
+      <Image
+        src="<image_data_url_0>"
+        layout="fill"
+        objectFit="cover"
+        objectPosition="center"
+        alt="Invoice background"
+        className="absolute inset-0 w-full h-full z-0"
+      />
+      <div className="relative z-10 h-full flex flex-col p-10" style={{paddingTop: '160px'}}>
         {/* Customer & Date Info */}
         <section className="grid grid-cols-2 gap-4">
             <div>
@@ -51,7 +59,7 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
         <section className="flex-grow text-sm pt-8">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-gray-100 text-gray-600 uppercase text-xs">
+              <tr className="bg-transparent text-gray-600 uppercase text-xs">
                 <th className="p-3 font-bold w-1/2">Description</th>
                 <th className="p-3 font-bold text-center">Qty</th>
                 <th className="p-3 font-bold text-right">Unit Price</th>
@@ -60,7 +68,7 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
             </thead>
             <tbody>
               {safeItems.map((item, index) => (
-                 <tr key={index} className="border-b border-gray-100">
+                 <tr key={index} className="border-b border-gray-200">
                     <td className="p-3 align-top">{item.description}</td>
                     <td className="p-3 align-top text-center">{item.quantity}</td>
                     <td className="p-3 align-top text-right">${item.price.toFixed(2)}</td>
@@ -73,7 +81,7 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
         
         {/* Paid Stamp Overlay */}
         {invoice.status === 'paid' && (
-          <div className="absolute opacity-10" style={{ bottom: '10rem', left: '50%', transform: 'translateX(-50%) rotate(-15deg)' }}>
+          <div className="absolute opacity-10" style={{ bottom: '8rem', left: '50%', transform: 'translateX(-50%)' }}>
              <Image
                 src="https://placehold.co/200x100/e0502d/ffffff.png"
                 width={200}
@@ -98,10 +106,6 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
                         <span className="font-bold text-gray-800">${total.toFixed(2)}</span>
                     </div>
                 </div>
-            </div>
-            <div className="text-center text-xs text-gray-500 border-t border-gray-200 pt-4">
-                <p className="font-bold">Thank you for your business!</p>
-                <p>Please make payment within 30 days of the invoice date.</p>
             </div>
         </footer>
       </div>
