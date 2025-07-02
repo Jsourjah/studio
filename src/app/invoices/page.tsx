@@ -27,6 +27,8 @@ import {
   Trash2,
   CheckCircle,
   Clock,
+  Eye,
+  Download,
 } from 'lucide-react';
 import { invoices as initialInvoices } from '@/lib/data';
 import type { Invoice, Material } from '@/lib/types';
@@ -53,6 +55,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { AddInvoiceForm } from '@/components/add-invoice-form';
 import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
@@ -79,8 +88,10 @@ export default function InvoicesPage() {
   const [isSeeding, setIsSeeding] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
   const [invoiceToPrint, setInvoiceToPrint] = useState<Invoice | null>(null);
+  const [invoiceToView, setInvoiceToView] = useState<Invoice | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
   const pdfRef = useRef<HTMLDivElement>(null);
+  const viewPdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setLoading(false);
@@ -126,59 +137,61 @@ export default function InvoicesPage() {
     );
   };
 
-  const generatePdf = async () => {
-    if (!invoiceToPrint || !pdfRef.current) return;
-    setIsPrinting(true);
-
+  const generateAndSavePdf = async (element: HTMLElement, fileName: string) => {
+    if (!element) return;
     try {
-      const canvas = await html2canvas(pdfRef.current, {
+      const canvas = await html2canvas(element, {
+        scale: 4,
         useCORS: true,
       });
-
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'pt',
         format: [288, 432],
       });
-
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-
       const canvasWidth = canvas.width;
       const canvasHeight = canvas.height;
-
       const ratio = canvasWidth / canvasHeight;
       let newWidth = pdfWidth;
       let newHeight = newWidth / ratio;
-
-      if(newHeight > pdfHeight) {
-          newHeight = pdfHeight;
-          newWidth = newHeight * ratio;
+      if (newHeight > pdfHeight) {
+        newHeight = pdfHeight;
+        newWidth = newHeight * ratio;
       }
-
       const x = (pdfWidth - newWidth) / 2;
       const y = 0;
-
       pdf.addImage(imgData, 'PNG', x, y, newWidth, newHeight);
-      pdf.save(`invoice-${invoiceToPrint.id}.pdf`);
+      pdf.save(fileName);
     } catch (error) {
       console.error('Failed to generate PDF', error);
-      // You could add a user-facing error message here (e.g., using a toast)
-    } finally {
-      setIsPrinting(false);
-      setInvoiceToPrint(null);
     }
   };
 
-  useEffect(() => {
-    if (invoiceToPrint) {
-      const timer = setTimeout(() => {
-        generatePdf();
-      }, 100);
-      return () => clearTimeout(timer);
+  const handlePrint = async (invoice: Invoice) => {
+    setInvoiceToPrint(invoice);
+    setIsPrinting(true);
+    setTimeout(async () => {
+      if (pdfRef.current) {
+        await generateAndSavePdf(pdfRef.current, `invoice-${invoice.id}.pdf`);
+      }
+      setIsPrinting(false);
+      setInvoiceToPrint(null);
+    }, 100);
+  };
+
+  const handleDownloadFromView = async () => {
+    if (invoiceToView && viewPdfRef.current) {
+      setIsPrinting(true);
+      await generateAndSavePdf(
+        viewPdfRef.current,
+        `invoice-${invoiceToView.id}.pdf`
+      );
+      setIsPrinting(false);
     }
-  }, [invoiceToPrint]);
+  };
 
   if (loading) {
     return (
@@ -251,10 +264,13 @@ export default function InvoicesPage() {
                 <TableBody>
                   {sortedInvoices.map((invoice) => (
                     <TableRow key={invoice.id}>
-                      <TableCell className="font-medium">{invoice.id}</TableCell>
+                      <TableCell className="font-medium">
+                        {invoice.id}
+                      </TableCell>
                       <TableCell>{invoice.customer}</TableCell>
                       <TableCell className="truncate max-w-[200px]">
-                        {Array.isArray(invoice.items) && invoice.items.map(item => item.description).join(', ')}
+                        {Array.isArray(invoice.items) &&
+                          invoice.items.map((item) => item.description).join(', ')}
                       </TableCell>
                       <TableCell>
                         {format(new Date(invoice.date), 'MM/dd/yyyy')}
@@ -286,11 +302,19 @@ export default function InvoicesPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuItem
-                              onClick={() => setInvoiceToPrint(invoice)}
+                              onClick={() => setInvoiceToView(invoice)}
+                            >
+                              <Eye className="mr-2 h-4 w-4" />
+                              View
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handlePrint(invoice)}
                               disabled={isPrinting}
                             >
                               <Printer className="mr-2 h-4 w-4" />
-                              {isPrinting ? 'Printing...' : 'Print Invoice'}
+                              {isPrinting && invoiceToPrint?.id === invoice.id
+                                ? 'Printing...'
+                                : 'Print'}
                             </DropdownMenuItem>
                             <DropdownMenuSub>
                               <DropdownMenuSubTrigger>
@@ -368,6 +392,37 @@ export default function InvoicesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={!!invoiceToView}
+        onOpenChange={(open) => !open && setInvoiceToView(null)}
+      >
+        <DialogContent className="max-w-3xl h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Invoice Preview: {invoiceToView?.id}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto">
+            <div className="mx-auto" style={{ width: '1152px', transform: 'scale(0.6)', transformOrigin: 'top center' }}>
+              <div ref={viewPdfRef}>
+                {invoiceToView && <InvoicePdf invoice={invoiceToView} />}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInvoiceToView(null)}>
+              Close
+            </Button>
+            <Button onClick={handleDownloadFromView} disabled={isPrinting}>
+              {isPrinting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              Download PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div
         className="absolute -left-[9999px] top-0 opacity-0"
