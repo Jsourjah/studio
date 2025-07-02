@@ -27,16 +27,18 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
         backgroundSize: '100% 100%',
         backgroundRepeat: 'no-repeat',
         position: 'relative',
-        fontSize: '32px' // 8px * 4
+        fontSize: '32px'
       }}
     >
-      <div className="absolute" style={{ top: '320px', left: '112px', right: '50%' }}>
+      {/* Customer Info */}
+      <div className="absolute" style={{ top: '320px', left: '112px', width: '500px' }}>
         <p className="font-semibold" style={{ fontSize: '40px' }}>{invoice.customer}</p>
-        {invoice.address && <p>{invoice.address}</p>}
-        {invoice.phone && <p>{invoice.phone}</p>}
+        {invoice.address && <p className="mt-2">{invoice.address}</p>}
+        {invoice.phone && <p className="mt-2">{invoice.phone}</p>}
       </div>
 
-      <div className="absolute text-left" style={{ top: '320px', right: '112px', width: '400px' }}>
+      {/* Invoice Details */}
+      <div className="absolute text-right" style={{ top: '320px', right: '112px', width: '400px' }}>
         <div className="mb-8">
             <p className="font-medium">{invoice.id}</p>
         </div>
