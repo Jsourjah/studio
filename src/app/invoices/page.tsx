@@ -152,18 +152,7 @@ export default function InvoicesPage() {
       });
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      const ratio = canvasWidth / canvasHeight;
-      let newWidth = pdfWidth;
-      let newHeight = newWidth / ratio;
-      if (newHeight > pdfHeight) {
-        newHeight = pdfHeight;
-        newWidth = newHeight * ratio;
-      }
-      const x = (pdfWidth - newWidth) / 2;
-      const y = 0;
-      pdf.addImage(imgData, 'PNG', x, y, newWidth, newHeight);
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(fileName);
     } catch (error) {
       console.error('Failed to generate PDF', error);
@@ -313,8 +302,8 @@ export default function InvoicesPage() {
                             >
                               <Printer className="mr-2 h-4 w-4" />
                               {isPrinting && invoiceToPrint?.id === invoice.id
-                                ? 'Printing...'
-                                : 'Print'}
+                                ? 'Downloading...'
+                                : 'Download'}
                             </DropdownMenuItem>
                             <DropdownMenuSub>
                               <DropdownMenuSubTrigger>
@@ -401,7 +390,7 @@ export default function InvoicesPage() {
           <DialogHeader>
             <DialogTitle>Invoice Preview: {invoiceToView?.id}</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto bg-gray-200 dark:bg-gray-800 p-4">
             <div className="mx-auto" style={{ width: '1152px', transform: 'scale(0.6)', transformOrigin: 'top center' }}>
               <div ref={viewPdfRef}>
                 {invoiceToView && <InvoicePdf invoice={invoiceToView} />}
