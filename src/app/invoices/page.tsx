@@ -387,12 +387,12 @@ export default function InvoicesPage() {
         open={!!invoiceToView}
         onOpenChange={(open) => !open && setInvoiceToView(null)}
       >
-        <DialogContent className="max-w-3xl h-[90vh] flex flex-col">
+        <DialogContent className="h-[90vh] w-[90vw] max-w-none flex flex-col">
           <DialogHeader>
             <DialogTitle>Invoice Preview: {invoiceToView?.id}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-auto bg-gray-200 dark:bg-gray-800 p-4">
-            <div className="mx-auto" style={{ width: '1152px', transform: 'scale(0.6)', transformOrigin: 'top center' }}>
+            <div className="mx-auto" style={{ width: '1152px' }}>
               <div ref={viewPdfRef}>
                 {invoiceToView && <InvoicePdf invoice={invoiceToView} />}
               </div>
