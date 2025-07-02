@@ -92,9 +92,9 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
-        orientation: 'portrait',
+        orientation: 'landscape',
         unit: 'pt',
-        format: 'a4',
+        format: [432, 288], // 6 inches x 4 inches
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -175,7 +175,7 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
             <PlusCircle className="mr-2 h-4 w-4" /> Add New Invoice
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-card">
           <DialogHeader>
             <DialogTitle>Add New Invoice</DialogTitle>
             <DialogDescription>
