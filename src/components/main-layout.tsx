@@ -23,7 +23,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
               width={32}
               height={32}
               alt="Business Manager Logo"
-              data-ai-hint="abstract geometric"
+              data-ai-hint="orange gray"
               className="rounded-lg"
             />
             <h1 className="text-lg font-semibold text-sidebar-foreground">
