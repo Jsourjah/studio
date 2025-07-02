@@ -42,13 +42,9 @@ const statusStyles = {
     'bg-red-500/20 text-red-700 hover:bg-red-500/30 dark:bg-red-500/10 dark:text-red-400',
 };
 
-// Function to generate a simple unique ID
-const generateUniqueId = () => {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-};
-
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useLocalStorage<Invoice[]>('invoices', []);
+  const [nextInvoiceId, setNextInvoiceId] = useLocalStorage<number>('nextInvoiceId', 101);
   const [materials] = useLocalStorage<Material[]>('materials', []);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
@@ -60,20 +56,28 @@ export default function InvoicesPage() {
   }, []);
 
   const handleAddInvoice = (newInvoiceData: Omit<Invoice, 'id'>) => {
+    const newId = String(nextInvoiceId).padStart(4, '0');
     const newInvoice: Invoice = {
-      id: generateUniqueId(),
+      id: newId,
       ...newInvoiceData,
     };
     setInvoices(prevInvoices => [...prevInvoices, newInvoice]);
+    setNextInvoiceId(prevId => prevId + 1);
   };
 
   const seedData = () => {
     setIsSeeding(true);
-    const seededInvoices = initialInvoices.map(invoice => ({
-      ...invoice,
-      id: generateUniqueId(),
-    }));
+    let currentId = nextInvoiceId;
+    const seededInvoices = initialInvoices.map(invoice => {
+      const newInvoice = {
+        ...invoice,
+        id: String(currentId).padStart(4, '0'),
+      };
+      currentId++;
+      return newInvoice;
+    });
     setInvoices(seededInvoices);
+    setNextInvoiceId(currentId);
     setIsSeeding(false);
   };
 
@@ -142,8 +146,8 @@ export default function InvoicesPage() {
               <TableBody>
                 {sortedInvoices.map((invoice) => (
                   <TableRow key={invoice.id}>
-                    <TableCell className="font-medium truncate max-w-[100px]">
-                      {invoice.id.substring(0, 8).toUpperCase()}
+                    <TableCell className="font-medium">
+                      {invoice.id}
                     </TableCell>
                     <TableCell>{invoice.customer}</TableCell>
                     <TableCell className="truncate max-w-[200px]">
