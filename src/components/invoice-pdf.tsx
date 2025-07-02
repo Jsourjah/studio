@@ -17,7 +17,7 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
 
   return (
     <div
-      className="text-black font-sans bg-white relative"
+      className="text-black font-sans relative"
       style={{ width: '612px', minHeight: '792px', fontFamily: 'Inter, sans-serif' }}
     >
       <Image
