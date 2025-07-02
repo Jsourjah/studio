@@ -12,7 +12,8 @@ type InvoicePdfProps = {
 // This component is designed to be rendered off-screen for PDF generation.
 // It is styled for a standard portrait letter size page.
 export function InvoicePdf({ invoice }: InvoicePdfProps) {
-  const subtotal = invoice.items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
+  const safeItems = Array.isArray(invoice.items) ? invoice.items : [];
+  const subtotal = safeItems.reduce((acc, item) => acc + (item.quantity * item.price), 0);
   // Assuming no tax for simplicity. Can be added later.
   const total = subtotal;
 
@@ -77,7 +78,7 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
               </tr>
             </thead>
             <tbody>
-              {invoice.items.map((item, index) => (
+              {safeItems.map((item, index) => (
                  <tr key={index} className="border-b border-gray-100">
                     <td className="p-3 align-top">{item.description}</td>
                     <td className="p-3 align-top text-center">{item.quantity}</td>
