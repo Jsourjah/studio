@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Invoice } from '@/lib/types';
@@ -9,11 +10,9 @@ type InvoicePdfProps = {
 };
 
 // This component is designed to be rendered off-screen for PDF generation.
-// It is styled for a standard portrait letter size page.
 export function InvoicePdf({ invoice }: InvoicePdfProps) {
   const safeItems = Array.isArray(invoice.items) ? invoice.items : [];
   const subtotal = safeItems.reduce((acc, item) => acc + (item.quantity * item.price), 0);
-  // Assuming no tax for simplicity. Can be added later.
   const total = subtotal;
 
   return (
@@ -21,17 +20,17 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
       className="text-black font-sans bg-white relative"
       style={{ width: '612px', minHeight: '792px', fontFamily: 'Inter, sans-serif' }}
     >
-      <div className="h-full flex flex-col p-10">
-        {/* Header */}
-        <header className="flex justify-end items-start pb-8">
-            <div className="text-right">
-                <h1 className="text-3xl font-bold uppercase text-gray-800">Invoice</h1>
-                <p className="text-sm text-gray-500 mt-1">Invoice # <span className="font-medium text-gray-700">{invoice.id}</span></p>
-            </div>
-        </header>
-        
+      <Image
+        src="/images/invoice-background.png"
+        layout="fill"
+        objectFit="cover"
+        objectPosition="center"
+        alt="Invoice Background"
+        className="-z-10"
+      />
+      <div className="h-full flex flex-col pt-40 px-10 pb-10">
         {/* Customer & Date Info */}
-        <section className="grid grid-cols-2 gap-4 pt-8 border-t border-gray-200">
+        <section className="grid grid-cols-2 gap-4">
             <div>
                 <h3 className="font-bold text-sm text-gray-500 mb-1 uppercase tracking-wider">Bill To</h3>
                 <p className="font-semibold text-base text-gray-800">{invoice.customer}</p>
@@ -39,6 +38,10 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
                 {invoice.phone && <p className="text-sm text-gray-600">{invoice.phone}</p>}
             </div>
             <div className="text-right">
+                <div className="mb-2">
+                    <p className="font-bold text-sm text-gray-500 uppercase tracking-wider">Invoice #</p>
+                    <p className="font-medium text-gray-800">{invoice.id}</p>
+                </div>
                 <div className="mb-2">
                     <p className="font-bold text-sm text-gray-500 uppercase tracking-wider">Invoice Date</p>
                     <p className="font-medium text-gray-800">{format(new Date(invoice.date), 'PPP')}</p>
@@ -76,13 +79,12 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
         
         {/* Paid Stamp Overlay */}
         {invoice.status === 'paid' && (
-          <div className="absolute opacity-10" style={{ bottom: '8rem', left: '50%', transform: 'translateX(-50%)' }}>
+          <div className="absolute opacity-80" style={{ bottom: '2rem', left: '50%', transform: 'translateX(-50%)' }}>
              <Image
-                src="https://placehold.co/200x100/e0502d/ffffff.png"
+                src="/images/paid-stamp.png"
                 width={200}
                 height={100}
                 alt="Paid Stamp"
-                data-ai-hint="paid stamp"
               />
           </div>
         )}
