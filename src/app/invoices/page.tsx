@@ -255,7 +255,7 @@ export default function InvoicesPage() {
                       <TableCell className="font-medium">{invoice.id}</TableCell>
                       <TableCell>{invoice.customer}</TableCell>
                       <TableCell className="truncate max-w-[200px]">
-                        {invoice.items.map(item => item.description).join(', ')}
+                        {Array.isArray(invoice.items) && invoice.items.map(item => item.description).join(', ')}
                       </TableCell>
                       <TableCell>
                         {format(new Date(invoice.date), 'MM/dd/yyyy')}
