@@ -50,16 +50,22 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
         </div>
       </div>
       
-      <div className="absolute" style={{ top: '780px', left: '112px', right: '112px' }}>
+      <div className="absolute" style={{ top: '680px', left: '112px', right: '112px' }}>
         <table className="w-full text-left" style={{ tableLayout: 'fixed' }}>
-          {/* The headers are part of the background image, so we don't render a <thead> here. */}
-          {/* We use colgroup to enforce column widths. */}
           <colgroup>
             <col style={{ width: '45%' }} />
             <col style={{ width: '15%' }} />
             <col style={{ width: '20%' }} />
             <col style={{ width: '20%' }} />
           </colgroup>
+          <thead>
+            <tr className="border-b-2 border-gray-500">
+              <th className="p-4 pb-2 font-semibold text-left">Description</th>
+              <th className="p-4 pb-2 font-semibold text-center">Qty</th>
+              <th className="p-4 pb-2 font-semibold text-right">Price</th>
+              <th className="p-4 pb-2 font-semibold text-right">Total</th>
+            </tr>
+          </thead>
           <tbody>
             {safeItems.map((item, index) => (
                <tr key={index} className="border-b border-gray-400/50">
