@@ -140,7 +140,7 @@ export default function InvoicesPage() {
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'pt',
-        format: 'letter',
+        format: [288, 432],
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
