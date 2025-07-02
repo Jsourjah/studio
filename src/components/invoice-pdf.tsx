@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Invoice } from '@/lib/types';
@@ -24,13 +23,7 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
     >
       <div className="h-full flex flex-col p-10">
         {/* Header */}
-        <header className="flex justify-between items-start pb-8 border-b border-gray-200">
-            <div>
-                <Image src="https://placehold.co/120x50.png" width={120} height={50} alt="Company Logo" data-ai-hint="logo business" />
-                <h2 className="text-lg font-semibold text-gray-700 mt-2">Your Company Name</h2>
-                <p className="text-xs text-gray-500">123 Business Rd, City, State 12345</p>
-                <p className="text-xs text-gray-500">your.email@company.com</p>
-            </div>
+        <header className="flex justify-end items-start pb-8">
             <div className="text-right">
                 <h1 className="text-3xl font-bold uppercase text-gray-800">Invoice</h1>
                 <p className="text-sm text-gray-500 mt-1">Invoice # <span className="font-medium text-gray-700">{invoice.id}</span></p>
@@ -38,7 +31,7 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
         </header>
         
         {/* Customer & Date Info */}
-        <section className="grid grid-cols-2 gap-4 pt-8">
+        <section className="grid grid-cols-2 gap-4 pt-8 border-t border-gray-200">
             <div>
                 <h3 className="font-bold text-sm text-gray-500 mb-1 uppercase tracking-wider">Bill To</h3>
                 <p className="font-semibold text-base text-gray-800">{invoice.customer}</p>
