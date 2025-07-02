@@ -1,3 +1,10 @@
+
+export type InvoiceItem = {
+  description: string;
+  quantity: number;
+  price: number;
+};
+
 export type Invoice = {
   id: string;
   customer: string;
@@ -6,11 +13,11 @@ export type Invoice = {
   date: string;
   address?: string;
   phone?: string;
-  items: string;
+  items: InvoiceItem[];
 };
 
 export type Material = {
-  id: string;
+  id:string;
   name: string;
   quantity: number;
   costPerUnit: number;

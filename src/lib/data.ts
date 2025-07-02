@@ -1,16 +1,17 @@
+
 import type { Invoice, Material, Purchase } from './types';
 import { subMonths, formatISO } from 'date-fns';
 
 const now = new Date();
 
 export const invoices: Omit<Invoice, 'id'>[] = [
-  { customer: 'Global Tech Inc.', amount: 250.0, status: 'paid', date: formatISO(subMonths(now, 0)), address: '123 Tech Park, Silicon Valley, CA 94000', phone: '555-0101', items: 'Cloud consulting services' },
-  { customer: 'Innovate Solutions', amount: 150.75, status: 'unpaid', date: formatISO(subMonths(now, 0)), address: '456 Innovation Dr, Austin, TX 78701', phone: '555-0102', items: 'Data analysis package' },
-  { customer: 'Synergy Corp', amount: 350.0, status: 'paid', date: formatISO(subMonths(now, 1)), address: '789 Synergy Blvd, New York, NY 10001', phone: '555-0103', items: 'Marketing campaign management' },
-  { customer: 'Apex Industries', amount: 450.0, status: 'overdue', date: formatISO(subMonths(now, 2)), address: '101 Apex Rd, Chicago, IL 60601', phone: '555-0104', items: 'Custom software development' },
-  { customer: 'Dynamic Systems', amount: 550.5, status: 'paid', date: formatISO(subMonths(now, 2)), address: '212 Dynamic Way, Seattle, WA 98101', phone: '555-0105', items: 'IT support contract' },
-  { customer: 'Global Tech Inc.', amount: 200.0, status: 'unpaid', date: formatISO(subMonths(now, 3)), address: '123 Tech Park, Silicon Valley, CA 94000', phone: '555-0101', items: 'Server maintenance' },
-  { customer: 'Innovate Solutions', amount: 300.0, status: 'paid', date: formatISO(subMonths(now, 4)), address: '456 Innovation Dr, Austin, TX 78701', phone: '555-0102', items: 'Website redesign project' },
+  { customer: 'Global Tech Inc.', amount: 250.0, status: 'paid', date: formatISO(subMonths(now, 0)), address: '123 Tech Park, Silicon Valley, CA 94000', phone: '555-0101', items: [{ description: 'Cloud consulting services', quantity: 1, price: 250.0 }] },
+  { customer: 'Innovate Solutions', amount: 150.75, status: 'unpaid', date: formatISO(subMonths(now, 0)), address: '456 Innovation Dr, Austin, TX 78701', phone: '555-0102', items: [{ description: 'Data analysis package', quantity: 1, price: 150.75 }] },
+  { customer: 'Synergy Corp', amount: 350.0, status: 'paid', date: formatISO(subMonths(now, 1)), address: '789 Synergy Blvd, New York, NY 10001', phone: '555-0103', items: [{ description: 'Marketing campaign management', quantity: 1, price: 350.0 }] },
+  { customer: 'Apex Industries', amount: 450.0, status: 'overdue', date: formatISO(subMonths(now, 2)), address: '101 Apex Rd, Chicago, IL 60601', phone: '555-0104', items: [{ description: 'Custom software development', quantity: 1, price: 450.0 }] },
+  { customer: 'Dynamic Systems', amount: 550.5, status: 'paid', date: formatISO(subMonths(now, 2)), address: '212 Dynamic Way, Seattle, WA 98101', phone: '555-0105', items: [{ description: 'IT support contract', quantity: 1, price: 550.5 }] },
+  { customer: 'Global Tech Inc.', amount: 200.0, status: 'unpaid', date: formatISO(subMonths(now, 3)), address: '123 Tech Park, Silicon Valley, CA 94000', phone: '555-0101', items: [{ description: 'Server maintenance', quantity: 1, price: 200.0 }] },
+  { customer: 'Innovate Solutions', amount: 300.0, status: 'paid', date: formatISO(subMonths(now, 4)), address: '456 Innovation Dr, Austin, TX 78701', phone: '555-0102', items: [{ description: 'Website redesign project', quantity: 1, price: 300.0 }] },
 ];
 
 export const materials: Omit<Material, 'id'>[] = [

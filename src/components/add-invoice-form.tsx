@@ -2,11 +2,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { format } from 'date-fns';
-import { CalendarIcon, PlusCircle, Printer, Loader2 } from 'lucide-react';
+import { CalendarIcon, PlusCircle, Printer, Loader2, Trash2 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -39,10 +39,16 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import type { Invoice, Material } from '@/lib/types';
+import type { Invoice, Material, InvoiceItem } from '@/lib/types';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { InvoicePdf } from '@/components/invoice-pdf';
+
+const invoiceItemSchema = z.object({
+  description: z.string().min(1, 'Description is required.'),
+  quantity: z.coerce.number().min(1, 'Quantity must be at least 1.'),
+  price: z.coerce.number().positive('Price must be a positive number.'),
+});
 
 const invoiceSchema = z.object({
   date: z.date({
@@ -51,8 +57,7 @@ const invoiceSchema = z.object({
   customer: z.string().min(1, 'Customer name is required.'),
   address: z.string().optional(),
   phone: z.string().optional(),
-  items: z.string().min(1, 'Please describe the items or services sold.'),
-  amount: z.coerce.number().positive('Amount must be a positive number.'),
+  items: z.array(invoiceItemSchema).min(1, 'At least one item is required.'),
   status: z.enum(['paid', 'unpaid', 'overdue']),
 });
 
@@ -74,11 +79,23 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
       customer: '',
       address: '',
       phone: '',
-      items: '',
-      amount: 0,
+      items: [{ description: '', quantity: 1, price: 0 }],
       status: 'unpaid',
     },
   });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "items"
+  });
+
+  const watchedItems = form.watch('items');
+  const totalAmount = watchedItems.reduce((acc, current) => {
+    const quantity = current.quantity || 0;
+    const price = current.price || 0;
+    return acc + (quantity * price);
+  }, 0);
+
 
   const generatePdf = async () => {
     if (!invoiceToPrint || !pdfRef.current) return;
@@ -92,9 +109,9 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
-        orientation: 'landscape',
+        orientation: 'portrait',
         unit: 'pt',
-        format: [432, 288], // 6 inches x 4 inches
+        format: 'letter',
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -104,20 +121,21 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
       const canvasHeight = canvas.height;
       
       const ratio = canvasWidth / canvasHeight;
-      const scaledHeight = pdfWidth / ratio;
-
-      // Only scale down if the content is taller than the page
-      const finalHeight = scaledHeight > pdfHeight ? pdfHeight : scaledHeight;
-      const finalWidth = finalHeight * ratio;
-
-      const x = (pdfWidth - finalWidth) / 2;
+      let newWidth = pdfWidth;
+      let newHeight = newWidth / ratio;
+      
+      if(newHeight > pdfHeight) {
+          newHeight = pdfHeight;
+          newWidth = newHeight * ratio;
+      }
+      
+      const x = (pdfWidth - newWidth) / 2;
       const y = 0;
 
-      pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+      pdf.addImage(imgData, 'PNG', x, y, newWidth, newHeight);
       pdf.save(`invoice-${invoiceToPrint.id}.pdf`);
     } catch (error) {
       console.error('Failed to generate PDF', error);
-      // You could add a user-facing error message here (e.g., using a toast)
     } finally {
       setIsPrinting(false);
       setInvoiceToPrint(null);
@@ -126,8 +144,7 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
         customer: '',
         address: '',
         phone: '',
-        items: '',
-        amount: 0,
+        items: [{ description: '', quantity: 1, price: 0 }],
         status: 'unpaid',
       });
       setOpen(false);
@@ -145,26 +162,29 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
 
 
   function onSubmit(values: z.infer<typeof invoiceSchema>) {
+    const amount = values.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
     const newId = onAddInvoice({
       ...values,
       date: values.date.toISOString(),
+      amount,
     });
 
     const newInvoice: Invoice = {
       id: newId,
       ...values,
       date: values.date.toISOString(),
+      amount,
     };
     
     setInvoiceToPrint(newInvoice);
   }
 
-  const handleMaterialClick = (materialName: string) => {
-    const currentItems = form.getValues('items');
-    const newItems = currentItems
-      ? `${currentItems}, ${materialName}`
-      : materialName;
-    form.setValue('items', newItems, { shouldValidate: true });
+  const handleMaterialClick = (material: Material) => {
+    append({ 
+        description: material.name, 
+        quantity: 1, 
+        price: material.costPerUnit 
+    });
   };
 
   return (
@@ -175,7 +195,7 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
             <PlusCircle className="mr-2 h-4 w-4" /> Add New Invoice
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-md bg-card">
+        <DialogContent className="sm:max-w-3xl bg-card">
           <DialogHeader>
             <DialogTitle>Add New Invoice</DialogTitle>
             <DialogDescription>
@@ -183,8 +203,142 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[70vh] overflow-y-auto pr-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="customer"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Customer Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Acme Inc." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone</FormLabel>
+                      <FormControl>
+                        <Input type="tel" placeholder="e.g. 555-123-4567" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="e.g. 123 Main St, Anytown USA"
+                        className="resize-none"
+                        rows={2}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="space-y-2">
+                 <FormLabel>Items / Services</FormLabel>
+                 {materials && materials.length > 0 && (
+                      <div className="pt-1">
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Click to add from your item list:
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {materials.map((material) => (
+                            <Badge
+                              key={material.id}
+                              variant="secondary"
+                              className="cursor-pointer"
+                              onClick={() => handleMaterialClick(material)}
+                            >
+                              {material.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+              </div>
+              
+              <div className="space-y-4">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="grid grid-cols-12 gap-x-2 gap-y-4 items-start p-3 border rounded-md relative">
+                     <FormField
+                        control={form.control}
+                        name={`items.${index}.description`}
+                        render={({ field }) => (
+                          <FormItem className="col-span-12 md:col-span-5">
+                            <FormLabel className={cn(index !== 0 && "sr-only")}>Description</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Item or service description" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`items.${index}.quantity`}
+                        render={({ field }) => (
+                           <FormItem className="col-span-6 md:col-span-2">
+                            <FormLabel className={cn(index !== 0 && "sr-only")}>Qty</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="1" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                       <FormField
+                        control={form.control}
+                        name={`items.${index}.price`}
+                        render={({ field }) => (
+                           <FormItem className="col-span-6 md:col-span-2">
+                            <FormLabel className={cn(index !== 0 && "sr-only")}>Price</FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    <div className="col-span-12 md:col-span-2 flex items-end">
+                       <p className="text-sm font-medium w-full text-right pt-2">
+                         ${((watchedItems[index]?.quantity || 0) * (watchedItems[index]?.price || 0)).toFixed(2)}
+                       </p>
+                    </div>
+                    <div className="col-span-12 md:col-span-1 flex items-end justify-end">
+                       <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => remove(index)}>
+                          <Trash2 className="h-4 w-4" />
+                       </Button>
+                    </div>
+                  </div>
+                ))}
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => append({ description: "", quantity: 1, price: 0 })}>
+                    Add Item
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-4">
                 <FormField
                   control={form.control}
                   name="date"
@@ -225,105 +379,6 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
                 />
                 <FormField
                   control={form.control}
-                  name="customer"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Customer Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g. Acme Inc." {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Address</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="e.g. 123 Main St, Anytown USA"
-                        className="resize-none"
-                        rows={2}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone</FormLabel>
-                    <FormControl>
-                      <Input type="tel" placeholder="e.g. 555-123-4567" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="items"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Items / Services</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="e.g. 1x Website Design, 2x Logo Concept"
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    {materials && materials.length > 0 && (
-                      <div className="pt-2">
-                        <p className="text-xs text-muted-foreground mb-2">
-                          Click to add from your item list:
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {materials.map((material) => (
-                            <Badge
-                              key={material.id}
-                              variant="secondary"
-                              className="cursor-pointer"
-                              onClick={() => handleMaterialClick(material.name)}
-                            >
-                              {material.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Amount</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="e.g. 150.00" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
                   name="status"
                   render={({ field }) => (
                     <FormItem>
@@ -348,21 +403,26 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
                   )}
                 />
               </div>
-              <DialogFooter>
-                <Button type="submit" disabled={isPrinting}>
-                  {isPrinting ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Printer className="mr-2 h-4 w-4" />
-                  )}
-                  Save and Print
-                </Button>
+              <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-2">
+                <div className="flex items-center justify-between w-full">
+                    <div className="text-xl font-bold">
+                        Total: ${totalAmount.toFixed(2)}
+                    </div>
+                    <Button type="submit" disabled={isPrinting}>
+                      {isPrinting ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Printer className="mr-2 h-4 w-4" />
+                      )}
+                      Save and Print
+                    </Button>
+                </div>
               </DialogFooter>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
-      <div className="hidden">
+      <div className="absolute -left-[9999px] top-0 opacity-0" aria-hidden="true">
         <div ref={pdfRef}>
           {invoiceToPrint && <InvoicePdf invoice={invoiceToPrint} />}
         </div>

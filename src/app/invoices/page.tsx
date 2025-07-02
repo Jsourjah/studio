@@ -138,9 +138,9 @@ export default function InvoicesPage() {
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
-        orientation: 'landscape',
+        orientation: 'portrait',
         unit: 'pt',
-        format: [432, 288], // 6 inches x 4 inches
+        format: 'letter',
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -150,15 +150,18 @@ export default function InvoicesPage() {
       const canvasHeight = canvas.height;
 
       const ratio = canvasWidth / canvasHeight;
-      const scaledHeight = pdfWidth / ratio;
+      let newWidth = pdfWidth;
+      let newHeight = newWidth / ratio;
 
-      const finalHeight = scaledHeight > pdfHeight ? pdfHeight : scaledHeight;
-      const finalWidth = finalHeight * ratio;
+      if(newHeight > pdfHeight) {
+          newHeight = pdfHeight;
+          newWidth = newHeight * ratio;
+      }
 
-      const x = (pdfWidth - finalWidth) / 2;
+      const x = (pdfWidth - newWidth) / 2;
       const y = 0;
 
-      pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+      pdf.addImage(imgData, 'PNG', x, y, newWidth, newHeight);
       pdf.save(`invoice-${invoiceToPrint.id}.pdf`);
     } catch (error) {
       console.error('Failed to generate PDF', error);
@@ -252,7 +255,7 @@ export default function InvoicesPage() {
                       <TableCell className="font-medium">{invoice.id}</TableCell>
                       <TableCell>{invoice.customer}</TableCell>
                       <TableCell className="truncate max-w-[200px]">
-                        {invoice.items}
+                        {invoice.items.map(item => item.description).join(', ')}
                       </TableCell>
                       <TableCell>
                         {format(new Date(invoice.date), 'MM/dd/yyyy')}
