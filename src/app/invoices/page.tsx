@@ -367,7 +367,10 @@ export default function InvoicesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="hidden">
+      <div
+        className="absolute -left-[9999px] top-0 opacity-0"
+        aria-hidden="true"
+      >
         <div ref={pdfRef}>
           {invoiceToPrint && <InvoicePdf invoice={invoiceToPrint} />}
         </div>
