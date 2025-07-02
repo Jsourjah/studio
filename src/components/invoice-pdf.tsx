@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Invoice } from '@/lib/types';
@@ -17,17 +16,17 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
 
   return (
     <div
-      className="text-black font-sans relative"
-      style={{ width: '288px', minHeight: '432px', fontFamily: 'Inter, sans-serif' }}
+      className="text-black font-sans"
+      style={{
+        width: '288px',
+        minHeight: '432px',
+        fontFamily: 'Inter, sans-serif',
+        backgroundImage: 'url(/images/invoice-background.png)',
+        backgroundSize: '100% 100%',
+        backgroundRepeat: 'no-repeat',
+        position: 'relative',
+      }}
     >
-      <Image
-        src="/images/invoice-background.png"
-        layout="fill"
-        objectFit="fill"
-        objectPosition="center"
-        alt="Invoice Background"
-        className="-z-10"
-      />
       <div className="h-full flex flex-col pt-10 px-5 pb-5 text-xs">
         {/* Customer & Date Info */}
         <section className="grid grid-cols-2 gap-4">
