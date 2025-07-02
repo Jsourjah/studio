@@ -38,16 +38,9 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
       </div>
 
       {/* Invoice Details */}
-      <div className="absolute text-right" style={{ top: '320px', right: '112px', width: '400px' }}>
-        <div className="mb-8">
-            <p className="font-medium">{invoice.id}</p>
-        </div>
-        <div className="mb-8">
-            <p className="font-medium">{format(new Date(invoice.date), 'PPP')}</p>
-        </div>
-        <div>
-            <p className="font-medium">{invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}</p>
-        </div>
+      <div className="absolute" style={{ top: '480px', left: '112px', width: '500px' }}>
+          <p><span className="font-medium">Invoice #:</span> {invoice.id}</p>
+          <p className="mt-2"><span className="font-medium">Date:</span> {format(new Date(invoice.date), 'PPP')}</p>
       </div>
       
       <div className="absolute" style={{ top: '680px', left: '112px', right: '112px' }}>
@@ -92,7 +85,7 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
       </div>
 
       {invoice.status === 'paid' && (
-        <div className="absolute" style={{ bottom: '400px', left: '50%', transform: 'translateX(-50%)' }}>
+        <div className="absolute" style={{ bottom: '100px', right: '112px' }}>
            <Image
               src="/images/paid-stamp.png"
               width={400}
