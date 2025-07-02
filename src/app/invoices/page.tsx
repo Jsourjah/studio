@@ -144,7 +144,8 @@ export default function InvoicesPage() {
         scale: 4,
         useCORS: true,
       });
-      const imgData = canvas.toDataURL('image/png');
+      // Use JPEG format to significantly reduce file size
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'pt',
@@ -152,7 +153,7 @@ export default function InvoicesPage() {
       });
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
       pdf.save(fileName);
     } catch (error) {
       console.error('Failed to generate PDF', error);

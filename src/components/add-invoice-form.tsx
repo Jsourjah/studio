@@ -103,10 +103,12 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
     
     try {
       const canvas = await html2canvas(pdfRef.current, {
+        scale: 4,
         useCORS: true,
       });
 
-      const imgData = canvas.toDataURL('image/png');
+      // Use JPEG format to significantly reduce file size
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'pt',
@@ -116,22 +118,7 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      
-      const ratio = canvasWidth / canvasHeight;
-      let newWidth = pdfWidth;
-      let newHeight = newWidth / ratio;
-      
-      if(newHeight > pdfHeight) {
-          newHeight = pdfHeight;
-          newWidth = newHeight * ratio;
-      }
-      
-      const x = (pdfWidth - newWidth) / 2;
-      const y = 0;
-
-      pdf.addImage(imgData, 'PNG', x, y, newWidth, newHeight);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
       pdf.save(`invoice-${invoiceToPrint.id}.pdf`);
     } catch (error) {
       console.error('Failed to generate PDF', error);
