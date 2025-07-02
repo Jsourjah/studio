@@ -53,17 +53,17 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
       <div className="absolute" style={{ top: '780px', left: '112px', right: '112px' }}>
         <table className="w-full text-left">
           <thead>
-            {/* Headers are on background image, so we make them transparent to preserve layout */}
+            {/* The headers are part of the background, so this row establishes the column spacing. */}
             <tr className="text-transparent">
               <th className="p-4 font-bold w-[45%]">Description</th>
-              <th className="p-4 font-bold w-[15%] text-center">Qty</th>
+              <th className="p-4 font-bold w-[15%] text-center">Quantity</th>
               <th className="p-4 font-bold w-[20%] text-right">Unit Price</th>
               <th className="p-4 font-bold w-[20%] text-right">Amount</th>
             </tr>
           </thead>
           <tbody>
             {safeItems.map((item, index) => (
-               <tr key={index} className="border-b-0">
+               <tr key={index} className="border-b border-gray-300/50">
                   <td className="p-4 align-top">{item.description}</td>
                   <td className="p-4 align-top text-center">{item.quantity}</td>
                   <td className="p-4 align-top text-right">${item.price.toFixed(2)}</td>
