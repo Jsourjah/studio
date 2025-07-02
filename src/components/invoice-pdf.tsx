@@ -19,20 +19,26 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
 
   return (
     <div
-      className="text-black font-sans relative"
+      className="text-black font-sans bg-white relative"
       style={{ width: '612px', minHeight: '792px', fontFamily: 'Inter, sans-serif' }}
     >
-      <Image
-        src="<image_data_url_0>"
-        layout="fill"
-        objectFit="cover"
-        objectPosition="center"
-        alt="Invoice background"
-        className="absolute inset-0 w-full h-full z-0"
-      />
-      <div className="relative z-10 h-full flex flex-col p-10" style={{paddingTop: '160px'}}>
+      <div className="h-full flex flex-col p-10">
+        {/* Header */}
+        <header className="flex justify-between items-start pb-8 border-b border-gray-200">
+            <div>
+                <Image src="https://placehold.co/120x50.png" width={120} height={50} alt="Company Logo" data-ai-hint="logo business" />
+                <h2 className="text-lg font-semibold text-gray-700 mt-2">Your Company Name</h2>
+                <p className="text-xs text-gray-500">123 Business Rd, City, State 12345</p>
+                <p className="text-xs text-gray-500">your.email@company.com</p>
+            </div>
+            <div className="text-right">
+                <h1 className="text-3xl font-bold uppercase text-gray-800">Invoice</h1>
+                <p className="text-sm text-gray-500 mt-1">Invoice # <span className="font-medium text-gray-700">{invoice.id}</span></p>
+            </div>
+        </header>
+        
         {/* Customer & Date Info */}
-        <section className="grid grid-cols-2 gap-4">
+        <section className="grid grid-cols-2 gap-4 pt-8">
             <div>
                 <h3 className="font-bold text-sm text-gray-500 mb-1 uppercase tracking-wider">Bill To</h3>
                 <p className="font-semibold text-base text-gray-800">{invoice.customer}</p>
@@ -40,10 +46,6 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
                 {invoice.phone && <p className="text-sm text-gray-600">{invoice.phone}</p>}
             </div>
             <div className="text-right">
-                <div className="mb-2">
-                    <p className="font-bold text-sm text-gray-500 uppercase tracking-wider">Invoice #</p>
-                    <p className="font-medium text-gray-800">{invoice.id}</p>
-                </div>
                 <div className="mb-2">
                     <p className="font-bold text-sm text-gray-500 uppercase tracking-wider">Invoice Date</p>
                     <p className="font-medium text-gray-800">{format(new Date(invoice.date), 'PPP')}</p>
