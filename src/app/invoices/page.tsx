@@ -242,7 +242,9 @@ export default function InvoicesPage() {
                   <TableRow>
                     <TableHead>Invoice ID</TableHead>
                     <TableHead>Customer</TableHead>
-                    <TableHead>Items</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-center">Qty</TableHead>
+                    <TableHead className="text-right">Unit Price</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
@@ -254,18 +256,29 @@ export default function InvoicesPage() {
                 <TableBody>
                   {sortedInvoices.map((invoice) => (
                     <TableRow key={invoice.id}>
-                      <TableCell className="font-medium">
+                      <TableCell className="font-medium align-top">
                         {invoice.id}
                       </TableCell>
-                      <TableCell>{invoice.customer}</TableCell>
-                      <TableCell className="truncate max-w-[200px]">
-                        {Array.isArray(invoice.items) &&
-                          invoice.items.map((item) => item.description).join(', ')}
+                      <TableCell className="align-top">{invoice.customer}</TableCell>
+                      <TableCell className="align-top max-w-[200px]">
+                        {Array.isArray(invoice.items) && invoice.items.map((item, index) => (
+                            <div key={index} className="truncate">{item.description}</div>
+                        ))}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center align-top">
+                        {Array.isArray(invoice.items) && invoice.items.map((item, index) => (
+                            <div key={index}>{item.quantity}</div>
+                        ))}
+                      </TableCell>
+                      <TableCell className="text-right align-top">
+                        {Array.isArray(invoice.items) && invoice.items.map((item, index) => (
+                            <div key={index}>${item.price.toFixed(2)}</div>
+                        ))}
+                      </TableCell>
+                      <TableCell className="align-top">
                         {format(new Date(invoice.date), 'MM/dd/yyyy')}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="align-top">
                         <Badge
                           variant="outline"
                           className={statusStyles[invoice.status]}
@@ -274,10 +287,10 @@ export default function InvoicesPage() {
                             invoice.status.slice(1)}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right align-top">
                         ${invoice.amount.toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right align-top">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
