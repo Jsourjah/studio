@@ -19,9 +19,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { PlusCircle, Loader2, Database } from 'lucide-react';
+import { Loader2, Database } from 'lucide-react';
 import { materials as initialMaterials } from '@/lib/data';
 import type { Material } from '@/lib/types';
+import { AddMaterialForm } from '@/components/add-material-form';
 
 // Function to generate a simple unique ID
 const generateUniqueId = () => {
@@ -36,6 +37,14 @@ export default function MaterialsPage() {
   useEffect(() => {
     setLoading(false);
   }, []);
+
+  const handleAddMaterial = (newMaterialData: Omit<Material, 'id'>) => {
+    const newMaterial: Material = {
+      id: generateUniqueId(),
+      ...newMaterialData,
+    };
+    setMaterials(prevMaterials => [...prevMaterials, newMaterial]);
+  };
   
   const seedData = () => {
     setIsSeeding(true);
@@ -60,9 +69,7 @@ export default function MaterialsPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Items/Services</h2>
         <div className="flex items-center space-x-2">
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add New Item/Service
-          </Button>
+          <AddMaterialForm onAddMaterial={handleAddMaterial} />
         </div>
       </div>
 
