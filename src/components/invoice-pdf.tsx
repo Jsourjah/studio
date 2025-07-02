@@ -92,9 +92,9 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
         
         {/* Paid Stamp Overlay */}
         {invoice.status === 'paid' && (
-          <div className="absolute opacity-10" style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-20deg)' }}>
+          <div className="absolute opacity-10" style={{ bottom: '10rem', left: '50%', transform: 'translateX(-50%) rotate(-15deg)' }}>
              <Image
-                src="https://placehold.co/200x100.png"
+                src="https://placehold.co/200x100/e0502d/ffffff.png"
                 width={200}
                 height={100}
                 alt="Paid Stamp"
