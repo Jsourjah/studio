@@ -4,8 +4,8 @@ import { MainLayout } from '@/components/main-layout';
 import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
-  title: 'Offline Business Manager',
-  description: 'Manage your business invoices, materials, and purchases offline.',
+  title: 'Business Manager',
+  description: 'An application to manage your business operations.',
 };
 
 export default function RootLayout({
