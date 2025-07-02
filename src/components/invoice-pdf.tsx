@@ -23,7 +23,7 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
       <Image
         src="/images/invoice-background.png"
         layout="fill"
-        objectFit="cover"
+        objectFit="fill"
         objectPosition="center"
         alt="Invoice Background"
         className="-z-10"
