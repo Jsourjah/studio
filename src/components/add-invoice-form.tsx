@@ -103,7 +103,6 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
     
     try {
       const canvas = await html2canvas(pdfRef.current, {
-        scale: 4,
         useCORS: true,
       });
 

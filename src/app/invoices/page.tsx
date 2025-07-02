@@ -132,7 +132,6 @@ export default function InvoicesPage() {
 
     try {
       const canvas = await html2canvas(pdfRef.current, {
-        scale: 4,
         useCORS: true,
       });
 
