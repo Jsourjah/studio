@@ -129,6 +129,7 @@ export default function InvoicesPage() {
                 <TableRow>
                   <TableHead>Invoice ID</TableHead>
                   <TableHead>Customer</TableHead>
+                  <TableHead>Items</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
@@ -144,6 +145,9 @@ export default function InvoicesPage() {
                       {invoice.id.substring(0, 8).toUpperCase()}
                     </TableCell>
                     <TableCell>{invoice.customer}</TableCell>
+                    <TableCell className="truncate max-w-[200px]">
+                      {invoice.items}
+                    </TableCell>
                     <TableCell>
                       {format(new Date(invoice.date), 'MM/dd/yyyy')}
                     </TableCell>

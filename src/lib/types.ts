@@ -6,6 +6,7 @@ export type Invoice = {
   date: string;
   address?: string;
   phone?: string;
+  items: string;
 };
 
 export type Material = {
