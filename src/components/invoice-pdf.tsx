@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Invoice } from '@/lib/types';
@@ -26,11 +27,11 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
         backgroundSize: '100% 100%',
         backgroundRepeat: 'no-repeat',
         position: 'relative',
-        fontSize: '40px' // 10px * 4
+        fontSize: '32px' // 8px * 4
       }}
     >
       <div className="absolute" style={{ top: '320px', left: '112px', right: '50%' }}>
-        <p className="font-semibold" style={{ fontSize: '48px' }}>{invoice.customer}</p>
+        <p className="font-semibold" style={{ fontSize: '40px' }}>{invoice.customer}</p>
         {invoice.address && <p>{invoice.address}</p>}
         {invoice.phone && <p>{invoice.phone}</p>}
       </div>
