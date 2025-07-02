@@ -63,6 +63,7 @@ export default function InvoicesPage() {
     };
     setInvoices(prevInvoices => [...prevInvoices, newInvoice]);
     setNextInvoiceId(prevId => prevId + 1);
+    return newId;
   };
 
   const seedData = () => {
