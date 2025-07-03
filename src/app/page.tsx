@@ -46,7 +46,7 @@ export default function Dashboard() {
     .slice(0, 5);
     
   const totalSales = invoices
-    .filter(Boolean)
+    .filter((invoice) => invoice && invoice.status === 'paid')
     .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
 
   const unpaidAmount = invoices
@@ -132,7 +132,7 @@ export default function Dashboard() {
               Rs.{totalSales.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
-              Sum of all invoices
+              Sum of all paid invoices
             </p>
           </CardContent>
         </Card>
