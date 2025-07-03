@@ -29,7 +29,7 @@ import { Input } from '@/components/ui/input';
 import type { Material } from '@/lib/types';
 
 const materialSchema = z.object({
-  name: z.string().min(1, 'Item/Service name is required.'),
+  name: z.string().min(1, 'Material name is required.'),
   quantity: z.coerce.number().min(0, 'Quantity must be zero or more.'),
   costPerUnit: z.coerce.number().positive('Cost must be a positive number.'),
 });
@@ -59,14 +59,14 @@ export function AddMaterialForm({ onAddMaterial }: AddMaterialFormProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add New Item/Service
+          <PlusCircle className="mr-2 h-4 w-4" /> Add New Material
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Item/Service</DialogTitle>
+          <DialogTitle>Add New Material</DialogTitle>
           <DialogDescription>
-            Fill in the details below to add a new item or service.
+            Fill in the details below to add a new raw material.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -115,7 +115,7 @@ export function AddMaterialForm({ onAddMaterial }: AddMaterialFormProps) {
             </div>
             <DialogFooter>
               <Button type="submit">
-                Add Item
+                Add Material
               </Button>
             </DialogFooter>
           </form>

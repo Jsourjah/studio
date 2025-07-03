@@ -39,7 +39,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import type { Invoice, Material, InvoiceItem } from '@/lib/types';
+import type { Invoice, Material, InvoiceItem, ProductBundle } from '@/lib/types';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { InvoicePdf } from '@/components/invoice-pdf';
@@ -65,9 +65,10 @@ const invoiceSchema = z.object({
 type AddInvoiceFormProps = {
   onAddInvoice: (newInvoice: Omit<Invoice, 'id'>) => string;
   materials: Material[];
+  productBundles: ProductBundle[];
 };
 
-export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps) {
+export function AddInvoiceForm({ onAddInvoice, materials, productBundles }: AddInvoiceFormProps) {
   const [open, setOpen] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [invoiceToPrint, setInvoiceToPrint] = useState<Invoice | null>(null);
@@ -175,6 +176,20 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
     });
   };
 
+  const handleBundleClick = (bundle: ProductBundle) => {
+    bundle.items.forEach(bundleItem => {
+        const material = materials.find(m => m.id === bundleItem.materialId);
+        if (material) {
+            append({
+                description: material.name,
+                quantity: bundleItem.quantity,
+                price: material.costPerUnit,
+                materialId: material.id,
+            });
+        }
+    });
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={(isOpen) => !isPrinting && setOpen(isOpen)}>
@@ -242,10 +257,29 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
               
               <div className="space-y-2">
                  <FormLabel>Items / Services</FormLabel>
-                 {materials && materials.length > 0 && (
+                 {productBundles && productBundles.length > 0 && (
                       <div className="pt-1">
                         <p className="text-xs text-muted-foreground mb-2">
-                          Click to add from your item list:
+                          Click to add a Product:
+                        </p>
+                        <div className="flex flex-wrap gap-1">
+                          {productBundles.map((bundle) => (
+                            <Badge
+                              key={bundle.id}
+                              variant="default"
+                              className="cursor-pointer"
+                              onClick={() => handleBundleClick(bundle)}
+                            >
+                              {bundle.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                 {materials && materials.length > 0 && (
+                      <div className="pt-2">
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Click to add a Material:
                         </p>
                         <div className="flex flex-wrap gap-1">
                           {materials.map((material) => (
@@ -427,5 +461,3 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
     </>
   );
 }
-
-    

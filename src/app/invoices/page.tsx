@@ -30,8 +30,8 @@ import {
   Eye,
   Download,
 } from 'lucide-react';
-import { invoices as initialInvoices } from '@/lib/data';
-import type { Invoice, Material } from '@/lib/types';
+import { invoices as initialInvoices, initialMaterials, initialProductBundles } from '@/lib/data';
+import type { Invoice, Material, ProductBundle } from '@/lib/types';
 import { format } from 'date-fns';
 import {
   DropdownMenu,
@@ -83,7 +83,8 @@ export default function InvoicesPage() {
     'nextInvoiceId',
     101
   );
-  const [materials, setMaterials] = useLocalStorage<Material[]>('materials', []);
+  const [materials, setMaterials] = useLocalStorage<Material[]>('materials', initialMaterials);
+  const [productBundles] = useLocalStorage<ProductBundle[]>('productBundles', initialProductBundles);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
@@ -227,6 +228,7 @@ export default function InvoicesPage() {
             <AddInvoiceForm
               onAddInvoice={handleAddInvoice}
               materials={materials}
+              productBundles={productBundles}
             />
           </div>
         </div>

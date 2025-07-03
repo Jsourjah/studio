@@ -1,14 +1,16 @@
+
 "use client";
 
 import { usePathname } from 'next/navigation';
 import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
-import { LayoutDashboard, FileText, Boxes, ShoppingCart, FilePieChart } from 'lucide-react';
+import { LayoutDashboard, FileText, Boxes, ShoppingCart, FilePieChart, Package } from 'lucide-react';
 import Link from 'next/link';
 
 const navLinks = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/invoices', label: 'Invoices', icon: FileText },
-  { href: '/materials', label: 'Items/Services', icon: Boxes },
+  { href: '/products', label: 'Products', icon: Package },
+  { href: '/materials', label: 'Materials', icon: Boxes },
   { href: '/purchases', label: 'Purchases', icon: ShoppingCart },
   { href: '/reports', label: 'Reports', icon: FilePieChart },
 ];

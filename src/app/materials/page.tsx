@@ -20,7 +20,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Loader2, Database } from 'lucide-react';
-import { materials as initialMaterials } from '@/lib/data';
+import { initialMaterials } from '@/lib/data';
 import type { Material } from '@/lib/types';
 import { AddMaterialForm } from '@/components/add-material-form';
 
@@ -48,11 +48,12 @@ export default function MaterialsPage() {
   
   const seedData = () => {
     setIsSeeding(true);
-    const seededMaterials = initialMaterials.map(material => ({
-      ...material,
-      id: generateUniqueId(),
-    }));
-    setMaterials(seededMaterials);
+    // Add only materials that are not already present
+    setMaterials(prev => {
+        const existingIds = new Set(prev.map(m => m.id));
+        const newMaterials = initialMaterials.filter(im => !existingIds.has(im.id));
+        return [...prev, ...newMaterials];
+    });
     setIsSeeding(false);
   };
 
@@ -67,7 +68,7 @@ export default function MaterialsPage() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Items/Services</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Materials</h2>
         <div className="flex items-center space-x-2">
           <AddMaterialForm onAddMaterial={handleAddMaterial} />
         </div>
@@ -76,9 +77,9 @@ export default function MaterialsPage() {
       {materials.length === 0 ? (
          <Card className="mt-6">
           <CardHeader>
-            <CardTitle>No Items or Services Found</CardTitle>
+            <CardTitle>No Materials Found</CardTitle>
             <CardDescription>
-              Your item/service list is empty. You can add a new one or load
+              Your materials list is empty. You can add a new one or load
               sample data to get started.
             </CardDescription>
           </CardHeader>
@@ -89,23 +90,23 @@ export default function MaterialsPage() {
               ) : (
                 <Database className="mr-2 h-4 w-4" />
               )}
-              Load Sample Items
+              Load Sample Materials
             </Button>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Item & Service List</CardTitle>
+            <CardTitle>Materials Inventory</CardTitle>
             <CardDescription>
-              Manage your reusable items and services.
+              Manage your raw materials and stock levels.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Item/Service ID</TableHead>
+                  <TableHead>Material ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Quantity in Stock</TableHead>
                   <TableHead className="text-right">Cost per Unit</TableHead>

@@ -1,5 +1,5 @@
 
-import type { Invoice, Material, Purchase } from './types';
+import type { Invoice, Material, Purchase, ProductBundle } from './types';
 import { subMonths, formatISO } from 'date-fns';
 
 const now = new Date();
@@ -14,13 +14,27 @@ export const invoices: Omit<Invoice, 'id'>[] = [
   { customer: 'Innovate Solutions', amount: 300.0, status: 'paid', date: formatISO(subMonths(now, 4)), address: '456 Innovation Dr, Austin, TX 78701', phone: '555-0102', items: [{ description: 'Website redesign project', quantity: 1, price: 300.0 }] },
 ];
 
-export const materials: Omit<Material, 'id'>[] = [
-  { name: 'Steel Beams', quantity: 100, costPerUnit: 50.0 },
-  { name: 'Concrete Mix', quantity: 500, costPerUnit: 5.5 },
-  { name: 'Plywood Sheets', quantity: 200, costPerUnit: 15.0 },
-  { name: 'Copper Wiring (ft)', quantity: 1000, costPerUnit: 0.75 },
-  { name: 'PVC Pipes', quantity: 300, costPerUnit: 8.25 },
+export const initialMaterials: Material[] = [
+  { id: 'laminating-sheet', name: 'Laminating Sheet', quantity: 500, costPerUnit: 18.00 },
+  { id: 'a4-paper', name: 'A4 Paper', quantity: 1000, costPerUnit: 2.70 },
+  { id: 'steel-beams', name: 'Steel Beams', quantity: 100, costPerUnit: 50.0 },
+  { id: 'concrete-mix', name: 'Concrete Mix', quantity: 500, costPerUnit: 5.5 },
+  { id: 'plywood-sheets', name: 'Plywood Sheets', quantity: 200, costPerUnit: 15.0 },
+  { id: 'copper-wiring', name: 'Copper Wiring (ft)', quantity: 1000, costPerUnit: 0.75 },
+  { id: 'pvc-pipes', name: 'PVC Pipes', quantity: 300, costPerUnit: 8.25 },
 ];
+
+export const initialProductBundles: ProductBundle[] = [
+  { 
+    id: 'lamination-service',
+    name: 'Lamination Service', 
+    items: [
+      { materialId: 'laminating-sheet', quantity: 1 },
+      { materialId: 'a4-paper', quantity: 1 }
+    ] 
+  }
+];
+
 
 export const purchases: Omit<Purchase, 'id'>[] = [
   { supplier: 'Steel Supply Co.', itemCount: 2, totalAmount: 5000.0, status: 'completed', date: formatISO(subMonths(now, 1)) },

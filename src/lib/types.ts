@@ -32,3 +32,14 @@ export type Purchase = {
   status: 'pending' | 'completed' | 'cancelled';
   date: string;
 };
+
+export type ProductBundleItem = {
+  materialId: string;
+  quantity: number;
+};
+
+export type ProductBundle = {
+  id: string;
+  name: string;
+  items: ProductBundleItem[];
+};
