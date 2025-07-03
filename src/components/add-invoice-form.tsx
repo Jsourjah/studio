@@ -49,6 +49,7 @@ const invoiceItemSchema = z.object({
   quantity: z.coerce.number().min(1, 'Quantity must be at least 1.'),
   price: z.coerce.number().min(0, 'Price must be a non-negative number.'),
   materialId: z.string().optional(),
+  productBundleId: z.string().optional(),
 });
 
 const invoiceSchema = z.object({
@@ -109,7 +110,6 @@ export function AddInvoiceForm({ onAddInvoice, materials, productBundles }: AddI
         useCORS: true,
       });
 
-      // Use JPEG format to significantly reduce file size
       const imgData = canvas.toDataURL('image/jpeg', 0.9);
       const pdf = new jsPDF({
         orientation: 'portrait',
@@ -177,17 +177,28 @@ export function AddInvoiceForm({ onAddInvoice, materials, productBundles }: AddI
   };
 
   const handleBundleClick = (bundle: ProductBundle) => {
-    bundle.items.forEach(bundleItem => {
-        const material = materials.find(m => m.id === bundleItem.materialId);
-        if (material) {
-            append({
-                description: material.name,
-                quantity: bundleItem.quantity,
-                price: material.costPerUnit,
-                materialId: material.id,
-            });
-        }
+    append({
+      description: bundle.name,
+      quantity: 1,
+      price: bundle.price,
+      productBundleId: bundle.id,
     });
+  };
+  
+  const getItemCost = (item: InvoiceItem) => {
+    if (item.productBundleId) {
+      const bundle = productBundles.find(b => b.id === item.productBundleId);
+      if (bundle) {
+        return bundle.items.reduce((acc, bundleItem) => {
+          const material = materials.find(m => m.id === bundleItem.materialId);
+          return acc + (material ? material.costPerUnit * bundleItem.quantity : 0);
+        }, 0);
+      }
+    }
+    if (item.materialId) {
+      return materials.find(m => m.id === item.materialId)?.costPerUnit || 0;
+    }
+    return 0;
   };
 
   return (
@@ -326,14 +337,12 @@ export function AddInvoiceForm({ onAddInvoice, materials, productBundles }: AddI
                           </FormItem>
                         )}
                       />
-                      <FormItem className="col-span-6 md:col-span-2">
-                        <FormLabel className={cn(index !== 0 && "sr-only")}>Cost</FormLabel>
-                        <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-                          {`Rs. ${
-                            (materials.find(m => m.id === watchedItems[index]?.materialId)?.costPerUnit || 0).toFixed(2)
-                          }`}
-                        </div>
-                      </FormItem>
+                    <FormItem className="col-span-6 md:col-span-2">
+                      <FormLabel className={cn(index !== 0 && "sr-only")}>Cost</FormLabel>
+                      <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                        {`Rs. ${getItemCost(watchedItems[index] as InvoiceItem).toFixed(2)}`}
+                      </div>
+                    </FormItem>
                        <FormField
                         control={form.control}
                         name={`items.${index}.price`}

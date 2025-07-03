@@ -27,7 +27,8 @@ export const initialMaterials: Material[] = [
 export const initialProductBundles: ProductBundle[] = [
   { 
     id: 'lamination-service',
-    name: 'Lamination Service', 
+    name: 'Lamination Service',
+    price: 30.00,
     items: [
       { materialId: 'laminating-sheet', quantity: 1 },
       { materialId: 'a4-paper', quantity: 1 }

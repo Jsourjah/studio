@@ -4,6 +4,7 @@ export type InvoiceItem = {
   quantity: number;
   price: number;
   materialId?: string;
+  productBundleId?: string;
 };
 
 export type Invoice = {
@@ -41,5 +42,6 @@ export type ProductBundleItem = {
 export type ProductBundle = {
   id: string;
   name: string;
+  price: number;
   items: ProductBundleItem[];
 };

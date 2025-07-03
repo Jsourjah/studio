@@ -42,6 +42,7 @@ const productBundleItemSchema = z.object({
 
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required.'),
+  price: z.coerce.number().positive('Price must be a positive number.'),
   items: z.array(productBundleItemSchema).min(1, 'At least one material is required.'),
 });
 
@@ -56,6 +57,7 @@ export function AddProductForm({ onAddProduct, materials }: AddProductFormProps)
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '',
+      price: 0,
       items: [{ materialId: '', quantity: 1 }],
     },
   });
@@ -67,7 +69,7 @@ export function AddProductForm({ onAddProduct, materials }: AddProductFormProps)
 
   function onSubmit(values: z.infer<typeof productSchema>) {
     onAddProduct(values);
-    form.reset({ name: '', items: [{ materialId: '', quantity: 1 }] });
+    form.reset({ name: '', price: 0, items: [{ materialId: '', quantity: 1 }] });
     setOpen(false);
   }
 
@@ -87,19 +89,34 @@ export function AddProductForm({ onAddProduct, materials }: AddProductFormProps)
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Product Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Lamination Service" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+             <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Lamination Service" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Selling Price</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="e.g. 30.00" step="0.01" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+            </div>
             
             <div>
               <FormLabel>Components</FormLabel>

@@ -109,19 +109,32 @@ export default function InvoicesPage() {
     const updatedMaterials = [...materials];
     let inventoryWasUpdated = false;
 
-    if (newInvoice.items) {
-      newInvoice.items.forEach(item => {
-        if (item.materialId) {
-          const materialIndex = updatedMaterials.findIndex(m => m.id === item.materialId);
-          if (materialIndex !== -1) {
-            const originalQuantity = updatedMaterials[materialIndex].quantity;
-            const newQuantity = Math.max(0, originalQuantity - item.quantity);
-            updatedMaterials[materialIndex].quantity = newQuantity;
-            inventoryWasUpdated = true;
-          }
+    newInvoice.items.forEach(item => {
+      // If it's a product bundle, deduct its components
+      if (item.productBundleId) {
+        const bundle = productBundles.find(b => b.id === item.productBundleId);
+        if (bundle) {
+          bundle.items.forEach(bundleItem => {
+            const materialIndex = updatedMaterials.findIndex(m => m.id === bundleItem.materialId);
+            if (materialIndex !== -1) {
+              const quantityToDeduct = bundleItem.quantity * item.quantity;
+              const originalQuantity = updatedMaterials[materialIndex].quantity;
+              updatedMaterials[materialIndex].quantity = Math.max(0, originalQuantity - quantityToDeduct);
+              inventoryWasUpdated = true;
+            }
+          });
         }
-      });
-    }
+      } 
+      // If it's a direct material, deduct it
+      else if (item.materialId) {
+        const materialIndex = updatedMaterials.findIndex(m => m.id === item.materialId);
+        if (materialIndex !== -1) {
+          const originalQuantity = updatedMaterials[materialIndex].quantity;
+          updatedMaterials[materialIndex].quantity = Math.max(0, originalQuantity - item.quantity);
+          inventoryWasUpdated = true;
+        }
+      }
+    });
 
     if (inventoryWasUpdated) {
       setMaterials(updatedMaterials);

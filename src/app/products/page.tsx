@@ -112,34 +112,27 @@ export default function ProductsPage() {
                 <TableRow>
                   <TableHead>Product Name</TableHead>
                   <TableHead>Components</TableHead>
-                  <TableHead className="text-right">Total Cost</TableHead>
+                  <TableHead className="text-right">Selling Price</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {productBundles.map((bundle) => {
-                    const totalCost = bundle.items.reduce((acc, item) => {
-                        const material = materials.find(m => m.id === item.materialId);
-                        return acc + (material ? material.costPerUnit * item.quantity : 0);
-                    }, 0);
-
-                    return (
-                        <TableRow key={bundle.id}>
-                            <TableCell className="font-medium">{bundle.name}</TableCell>
-                            <TableCell>
-                                <div className="flex flex-wrap gap-1">
-                                    {bundle.items.map((item, index) => (
-                                        <Badge key={index} variant="outline">
-                                            {item.quantity}x {getMaterialName(item.materialId)}
-                                        </Badge>
-                                    ))}
-                                </div>
-                            </TableCell>
-                            <TableCell className="text-right font-medium">
-                                Rs.{totalCost.toFixed(2)}
-                            </TableCell>
-                        </TableRow>
-                    );
-                })}
+                {productBundles.map((bundle) => (
+                    <TableRow key={bundle.id}>
+                        <TableCell className="font-medium">{bundle.name}</TableCell>
+                        <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                                {bundle.items.map((item, index) => (
+                                    <Badge key={index} variant="outline">
+                                        {item.quantity}x {getMaterialName(item.materialId)}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                            Rs.{bundle.price.toFixed(2)}
+                        </TableCell>
+                    </TableRow>
+                ))}
               </TableBody>
             </Table>
           </CardContent>
