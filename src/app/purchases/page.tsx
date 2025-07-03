@@ -20,10 +20,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Loader2, Database } from 'lucide-react';
+import { Loader2, Database } from 'lucide-react';
 import { purchases as initialPurchases } from '@/lib/data';
 import type { Purchase } from '@/lib/types';
 import { format } from 'date-fns';
+import { AddPurchaseForm } from '@/components/add-purchase-form';
 
 const statusStyles: { [key: string]: string } = {
   completed:
@@ -43,6 +44,16 @@ export default function PurchasesPage() {
   useEffect(() => {
     setLoading(false);
   }, []);
+  
+  const handleAddPurchase = (newPurchaseData: Omit<Purchase, 'id'>) => {
+    const newId = `P${String(nextPurchaseId).padStart(3, '0')}`;
+    const newPurchase: Purchase = {
+      id: newId,
+      ...newPurchaseData,
+    };
+    setPurchases(prevPurchases => [...prevPurchases, newPurchase]);
+    setNextPurchaseId(prevId => prevId + 1);
+  };
   
   const seedData = () => {
     setIsSeeding(true);
@@ -75,9 +86,7 @@ export default function PurchasesPage() {
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Purchases</h2>
         <div className="flex items-center space-x-2">
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" /> Add New Purchase
-          </Button>
+          <AddPurchaseForm onAddPurchase={handleAddPurchase} />
         </div>
       </div>
 
