@@ -45,8 +45,8 @@ export default function Dashboard() {
     .sort((a,b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
     .slice(0, 5);
     
-  const totalRevenue = invoices
-    .filter((invoice) => invoice && invoice.status === 'paid')
+  const totalSales = invoices
+    .filter(Boolean)
     .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
 
   const unpaidAmount = invoices
@@ -129,7 +129,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              Rs.{(totalRevenue + unpaidAmount).toLocaleString()}
+              Rs.{totalSales.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
               Sum of all invoices
