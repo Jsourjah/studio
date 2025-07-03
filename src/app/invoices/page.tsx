@@ -83,7 +83,7 @@ export default function InvoicesPage() {
     'nextInvoiceId',
     101
   );
-  const [materials] = useLocalStorage<Material[]>('materials', []);
+  const [materials, setMaterials] = useLocalStorage<Material[]>('materials', []);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
@@ -103,6 +103,29 @@ export default function InvoicesPage() {
       id: newId,
       ...newInvoiceData,
     };
+
+    // Deduct used materials from inventory
+    const updatedMaterials = [...materials];
+    let inventoryWasUpdated = false;
+
+    if (newInvoice.items) {
+      newInvoice.items.forEach(item => {
+        if (item.materialId) {
+          const materialIndex = updatedMaterials.findIndex(m => m.id === item.materialId);
+          if (materialIndex !== -1) {
+            const originalQuantity = updatedMaterials[materialIndex].quantity;
+            const newQuantity = Math.max(0, originalQuantity - item.quantity);
+            updatedMaterials[materialIndex].quantity = newQuantity;
+            inventoryWasUpdated = true;
+          }
+        }
+      });
+    }
+
+    if (inventoryWasUpdated) {
+      setMaterials(updatedMaterials);
+    }
+    
     setInvoices((prevInvoices) => [...prevInvoices, newInvoice]);
     setNextInvoiceId((prevId) => prevId + 1);
     return newId;

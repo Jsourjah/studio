@@ -3,6 +3,7 @@ export type InvoiceItem = {
   description: string;
   quantity: number;
   price: number;
+  materialId?: string;
 };
 
 export type Invoice = {

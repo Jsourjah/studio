@@ -48,6 +48,7 @@ const invoiceItemSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   quantity: z.coerce.number().min(1, 'Quantity must be at least 1.'),
   price: z.coerce.number().positive('Price must be a positive number.'),
+  materialId: z.string().optional(),
 });
 
 const invoiceSchema = z.object({
@@ -169,7 +170,8 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
     append({ 
         description: material.name, 
         quantity: 1, 
-        price: material.costPerUnit 
+        price: material.costPerUnit,
+        materialId: material.id,
     });
   };
 
