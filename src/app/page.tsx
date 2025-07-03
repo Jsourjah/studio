@@ -27,14 +27,13 @@ import {
 } from 'lucide-react';
 
 import { monthlySummary } from '@/lib/data';
-import type { Invoice, Purchase } from '@/lib/types';
+import type { Invoice } from '@/lib/types';
 import { format } from 'date-fns';
 import { DashboardChart } from '@/components/dashboard-chart';
 import type { ChartConfig } from '@/components/ui/chart';
 
 export default function Dashboard() {
   const [invoices] = useLocalStorage<Invoice[]>('invoices', []);
-  const [purchases] = useLocalStorage<Purchase[]>('purchases', []);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -54,8 +53,6 @@ export default function Dashboard() {
     .filter((invoice) => invoice && (invoice.status === 'unpaid' || invoice.status === 'overdue'))
     .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
   
-  const activePurchases = purchases.filter(p => p.status === 'pending').length;
-
   const totalMonthlyRevenue = monthlySummary.reduce((acc, curr) => acc + curr.revenue, 0);
   const totalMonthlyPurchases = monthlySummary.reduce((acc, curr) => acc + curr.purchases, 0);
 
@@ -142,14 +139,14 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Active Purchases
+              Monthly Purchases
             </CardTitle>
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+{activePurchases}</div>
+            <div className="text-2xl font-bold">Rs.{totalMonthlyPurchases.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
-              Currently pending purchases
+              From monthly summary data
             </p>
           </CardContent>
         </Card>
