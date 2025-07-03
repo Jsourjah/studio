@@ -68,7 +68,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { InvoicePdf } from '@/components/invoice-pdf';
 
-const statusStyles = {
+const statusStyles: { [key: string]: string } = {
   paid:
     'bg-green-500/20 text-green-700 hover:bg-green-500/30 dark:bg-green-500/10 dark:text-green-400',
   unpaid:
@@ -228,8 +228,8 @@ export default function InvoicesPage() {
     );
   }
 
-  const sortedInvoices = [...invoices].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  const sortedInvoices = [...invoices].filter(Boolean).sort(
+    (a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
   );
 
   return (
@@ -296,19 +296,19 @@ export default function InvoicesPage() {
                       </TableCell>
                       <TableCell>{invoice.customer}</TableCell>
                       <TableCell>
-                        {format(new Date(invoice.date), 'MM/dd/yyyy')}
+                        {invoice.date ? format(new Date(invoice.date), 'MM/dd/yyyy') : 'N/A'}
                       </TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"
-                          className={statusStyles[invoice.status]}
+                          className={statusStyles[invoice.status] || ''}
                         >
-                          {invoice.status.charAt(0).toUpperCase() +
-                            invoice.status.slice(1)}
+                          {(invoice.status || 'unknown').charAt(0).toUpperCase() +
+                            (invoice.status || 'unknown').slice(1)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        Rs.{invoice.amount.toFixed(2)}
+                        Rs.{(invoice.amount || 0).toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>

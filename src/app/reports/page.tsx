@@ -44,27 +44,28 @@ export default function ReportsPage() {
   }, []);
 
   const totalRevenue = invoices
-    .filter((invoice) => invoice.status === 'paid')
-    .reduce((sum, invoice) => sum + invoice.amount, 0);
+    .filter((invoice) => invoice && invoice.status === 'paid')
+    .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
 
   const outstandingRevenue = invoices
-    .filter((invoice) => invoice.status === 'unpaid' || invoice.status === 'overdue')
-    .reduce((sum, invoice) => sum + invoice.amount, 0);
+    .filter((invoice) => invoice && (invoice.status === 'unpaid' || invoice.status === 'overdue'))
+    .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
 
   const totalInventoryValue = materials.reduce(
-    (sum, material) => sum + material.quantity * material.costPerUnit,
+    (sum, material) => sum + ((material?.quantity || 0) * (material?.costPerUnit || 0)),
     0
   );
 
   const totalPurchaseAmount = purchases
-    .filter((purchase) => purchase.status === 'completed')
-    .reduce((sum, purchase) => sum + purchase.totalAmount, 0);
+    .filter((purchase) => purchase && purchase.status === 'completed')
+    .reduce((sum, purchase) => sum + (purchase.totalAmount || 0), 0);
   
   const recentPurchases = [...purchases]
-    .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .filter(Boolean)
+    .sort((a,b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
     .slice(0, 5);
   
-  const statusStyles = {
+  const statusStyles: { [key: string]: string } = {
     completed:
       'bg-green-500/20 text-green-700 hover:bg-green-500/30 dark:bg-green-500/10 dark:text-green-400',
     pending:
@@ -144,18 +145,18 @@ export default function ReportsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {recentPurchases.map((purchase) => (
-                <TableRow key={purchase.id}>
-                  <TableCell className="font-medium truncate max-w-[100px]">{purchase.id.substring(0, 8).toUpperCase()}</TableCell>
+              {recentPurchases.map((purchase, index) => (
+                <TableRow key={purchase.id || index}>
+                  <TableCell className="font-medium truncate max-w-[100px]">{(purchase.id || '').substring(0, 8).toUpperCase()}</TableCell>
                   <TableCell>{purchase.supplier}</TableCell>
-                  <TableCell>{format(new Date(purchase.date), 'MM/dd/yyyy')}</TableCell>
+                  <TableCell>{purchase.date ? format(new Date(purchase.date), 'MM/dd/yyyy') : 'N/A'}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={statusStyles[purchase.status]}>
-                      {purchase.status.charAt(0).toUpperCase() + purchase.status.slice(1)}
+                    <Badge variant="outline" className={statusStyles[purchase.status] || ''}>
+                      {(purchase.status || 'unknown').charAt(0).toUpperCase() + (purchase.status || 'unknown').slice(1)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    Rs.{purchase.totalAmount.toFixed(2)}
+                    Rs.{(purchase.totalAmount || 0).toFixed(2)}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

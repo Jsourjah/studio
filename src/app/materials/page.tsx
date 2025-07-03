@@ -155,11 +155,11 @@ export default function MaterialsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {materials.map((material) => (
-                    <TableRow key={material.id}>
-                      <TableCell className="font-medium truncate max-w-[100px]">{material.id.substring(0, 8).toUpperCase()}</TableCell>
-                      <TableCell>{material.name}</TableCell>
-                      <TableCell>{material.quantity}</TableCell>
+                  {materials.filter(Boolean).map((material, index) => (
+                    <TableRow key={material.id || index}>
+                      <TableCell className="font-medium truncate max-w-[100px]">{(material.id || '').substring(0, 8).toUpperCase()}</TableCell>
+                      <TableCell>{material.name || 'N/A'}</TableCell>
+                      <TableCell>{material.quantity || 0}</TableCell>
                       <TableCell className="text-right">
                         Rs.{(material.costPerUnit || 0).toFixed(2)}
                       </TableCell>

@@ -156,13 +156,13 @@ export default function ProductsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {productBundles.map((bundle) => (
-                      <TableRow key={bundle.id}>
-                          <TableCell className="font-medium">{bundle.name}</TableCell>
+                  {productBundles.filter(Boolean).map((bundle, index) => (
+                      <TableRow key={bundle.id || index}>
+                          <TableCell className="font-medium">{bundle.name || 'N/A'}</TableCell>
                           <TableCell>
                               <div className="flex flex-wrap gap-1">
-                                  {bundle.items.map((item, index) => (
-                                      <Badge key={index} variant="outline">
+                                  {(bundle.items || []).map((item, itemIndex) => (
+                                      <Badge key={itemIndex} variant="outline">
                                           {item.quantity}x {getMaterialName(item.materialId)}
                                       </Badge>
                                   ))}
