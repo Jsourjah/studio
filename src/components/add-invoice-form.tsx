@@ -186,18 +186,28 @@ export function AddInvoiceForm({ onAddInvoice, materials, productBundles }: AddI
   };
   
   const getItemCost = (item: InvoiceItem) => {
+    // If it's a product bundle, calculate sum of its material costs
     if (item.productBundleId) {
       const bundle = productBundles.find(b => b.id === item.productBundleId);
       if (bundle) {
-        return bundle.items.reduce((acc, bundleItem) => {
+        // Find the cost of each material in the bundle and sum it up
+        const totalCost = bundle.items.reduce((acc, bundleItem) => {
           const material = materials.find(m => m.id === bundleItem.materialId);
-          return acc + (material ? material.costPerUnit * bundleItem.quantity : 0);
+          // The cost for this part of the bundle is material cost * quantity in bundle
+          const itemCost = material ? material.costPerUnit * bundleItem.quantity : 0;
+          return acc + itemCost;
         }, 0);
+        return totalCost;
       }
+    } 
+    
+    // If it's a single material, find its cost per unit
+    else if (item.materialId) {
+      const material = materials.find(m => m.id === item.materialId);
+      return material?.costPerUnit || 0;
     }
-    if (item.materialId) {
-      return materials.find(m => m.id === item.materialId)?.costPerUnit || 0;
-    }
+
+    // If it's a custom item with no ID, it has no cost
     return 0;
   };
 
