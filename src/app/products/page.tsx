@@ -129,7 +129,7 @@ export default function ProductsPage() {
                             </div>
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                            Rs.{bundle.price.toFixed(2)}
+                            Rs.{(bundle.price || 0).toFixed(2)}
                         </TableCell>
                     </TableRow>
                 ))}
