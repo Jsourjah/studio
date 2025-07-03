@@ -305,7 +305,7 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
                       />
                     <div className="col-span-12 md:col-span-2 flex items-end">
                        <p className="text-sm font-medium w-full text-right pt-2">
-                         ${((watchedItems[index]?.quantity || 0) * (watchedItems[index]?.price || 0)).toFixed(2)}
+                         Rs.{((watchedItems[index]?.quantity || 0) * (watchedItems[index]?.price || 0)).toFixed(2)}
                        </p>
                     </div>
                     <div className="col-span-12 md:col-span-1 flex items-end justify-end">
@@ -392,7 +392,7 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
               <DialogFooter className="pt-4 sticky bottom-0 bg-card pb-2">
                 <div className="flex items-center justify-between w-full">
                     <div className="text-xl font-bold">
-                        Total: ${totalAmount.toFixed(2)}
+                        Total: Rs.{totalAmount.toFixed(2)}
                     </div>
                     <Button type="submit" disabled={isPrinting}>
                       {isPrinting ? (

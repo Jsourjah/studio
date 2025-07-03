@@ -94,7 +94,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${totalRevenue.toLocaleString()}
+              Rs.{totalRevenue.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
               From all paid invoices
@@ -109,7 +109,7 @@ export default function Dashboard() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${unpaidAmount.toLocaleString()}</div>
+            <div className="text-2xl font-bold">Rs.{unpaidAmount.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               Total amount outstanding
             </p>
@@ -122,7 +122,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${(totalRevenue + unpaidAmount).toLocaleString()}
+              Rs.{(totalRevenue + unpaidAmount).toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
               Sum of all invoices
@@ -195,7 +195,7 @@ export default function Dashboard() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      ${invoice.amount.toFixed(2)}
+                      Rs.{invoice.amount.toFixed(2)}
                     </TableCell>
                   </TableRow>
                 ))}

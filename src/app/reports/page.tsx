@@ -90,7 +90,7 @@ export default function ReportsPage() {
             <CardDescription>From paid invoices</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">${totalRevenue.toLocaleString('en-US')}</p>
+            <p className="text-2xl font-bold">Rs.{totalRevenue.toLocaleString('en-US')}</p>
           </CardContent>
         </Card>
         <Card>
@@ -99,7 +99,7 @@ export default function ReportsPage() {
             <CardDescription>Unpaid & Overdue</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">${outstandingRevenue.toLocaleString('en-US')}</p>
+            <p className="text-2xl font-bold">Rs.{outstandingRevenue.toLocaleString('en-US')}</p>
           </CardContent>
         </Card>
         <Card>
@@ -108,7 +108,7 @@ export default function ReportsPage() {
             <CardDescription>Total cost of materials</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">${totalInventoryValue.toLocaleString('en-US')}</p>
+            <p className="text-2xl font-bold">Rs.{totalInventoryValue.toLocaleString('en-US')}</p>
           </CardContent>
         </Card>
         <Card>
@@ -117,7 +117,7 @@ export default function ReportsPage() {
             <CardDescription>Total spend</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">${totalPurchaseAmount.toLocaleString('en-US')}</p>
+            <p className="text-2xl font-bold">Rs.{totalPurchaseAmount.toLocaleString('en-US')}</p>
           </CardContent>
         </Card>
       </div>
@@ -155,7 +155,7 @@ export default function ReportsPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-medium">
-                    ${purchase.totalAmount.toFixed(2)}
+                    Rs.{purchase.totalAmount.toFixed(2)}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

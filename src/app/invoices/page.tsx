@@ -270,7 +270,7 @@ export default function InvoicesPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        ${invoice.amount.toFixed(2)}
+                        Rs.{invoice.amount.toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>

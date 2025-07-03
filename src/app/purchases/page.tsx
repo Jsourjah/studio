@@ -141,7 +141,7 @@ export default function PurchasesPage() {
                       {purchase.itemCount}
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      ${purchase.totalAmount.toFixed(2)}
+                      Rs.{purchase.totalAmount.toFixed(2)}
                     </TableCell>
                   </TableRow>
                 ))}

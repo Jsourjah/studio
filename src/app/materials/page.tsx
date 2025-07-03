@@ -119,10 +119,10 @@ export default function MaterialsPage() {
                     <TableCell>{material.name}</TableCell>
                     <TableCell>{material.quantity}</TableCell>
                     <TableCell className="text-right">
-                      ${material.costPerUnit.toFixed(2)}
+                      Rs.{material.costPerUnit.toFixed(2)}
                     </TableCell>
                     <TableCell className="text-right font-medium">
-                      ${(material.quantity * material.costPerUnit).toFixed(2)}
+                      Rs.{(material.quantity * material.costPerUnit).toFixed(2)}
                     </TableCell>
                   </TableRow>
                 ))}

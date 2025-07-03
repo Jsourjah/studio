@@ -54,7 +54,7 @@ export function DashboardChart({ data, chartConfig }: DashboardChartProps) {
                                             y={viewBox.cy}
                                             className="fill-foreground text-3xl font-bold"
                                         >
-                                            {`$${(totalValue / 1000).toFixed(1)}k`}
+                                            {`Rs.${(totalValue / 1000).toFixed(1)}k`}
                                         </tspan>
                                         <tspan
                                             x={viewBox.cx}

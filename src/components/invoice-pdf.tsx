@@ -64,8 +64,8 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
                <tr key={index} className="border-b border-gray-400/50">
                   <td className="p-4 align-top">{item.description}</td>
                   <td className="p-4 align-top text-center">{item.quantity}</td>
-                  <td className="p-4 align-top text-right">${item.price.toFixed(2)}</td>
-                  <td className="p-4 align-top text-right">${(item.quantity * item.price).toFixed(2)}</td>
+                  <td className="p-4 align-top text-right">Rs.{item.price.toFixed(2)}</td>
+                  <td className="p-4 align-top text-right">Rs.{(item.quantity * item.price).toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
@@ -75,12 +75,12 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
       <div className="absolute" style={{ bottom: '260px', right: '112px', width: '480px' }}>
           <div className="flex justify-between mb-4">
               <span>Subtotal</span>
-              <span className="font-medium">${subtotal.toFixed(2)}</span>
+              <span className="font-medium">Rs.{subtotal.toFixed(2)}</span>
           </div>
           <div className="border-t-2 border-gray-400 my-4"></div>
           <div className="flex justify-between font-bold">
               <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+              <span>Rs.{total.toFixed(2)}</span>
           </div>
       </div>
 
