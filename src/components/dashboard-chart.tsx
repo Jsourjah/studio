@@ -1,12 +1,16 @@
 "use client"
 
+import * as React from "react"
+import { Label, Pie, PieChart as RechartsPieChart } from "recharts"
+
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from '@/components/ui/chart';
-import { Bar, CartesianGrid, XAxis, YAxis, BarChart as RechartsBarChart } from 'recharts';
+} from "@/components/ui/chart"
 
 type DashboardChartProps = {
     data: any[];
@@ -14,28 +18,63 @@ type DashboardChartProps = {
 };
 
 export function DashboardChart({ data, chartConfig }: DashboardChartProps) {
+    const totalValue = React.useMemo(() => {
+        return data.reduce((acc, curr) => acc + curr.value, 0);
+    }, [data]);
+
     return (
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <RechartsBarChart data={data}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    tickMargin={10}
-                    axisLine={false}
-                />
-                <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={10}
-                    tickFormatter={(value) => `$${Number(value) / 1000}k`}
-                />
+        <ChartContainer
+            config={chartConfig}
+            className="mx-auto aspect-square h-full max-h-[300px]"
+        >
+            <RechartsPieChart>
                 <ChartTooltip
-                    content={<ChartTooltipContent />}
+                    cursor={false}
+                    content={<ChartTooltipContent hideLabel />}
                 />
-                <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
-                <Bar dataKey="purchases" fill="var(--color-purchases)" radius={4} />
-            </RechartsBarChart>
+                <Pie
+                    data={data}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius="60%"
+                    strokeWidth={5}
+                >
+                    <Label
+                        content={({ viewBox }) => {
+                            if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
+                                return (
+                                    <text
+                                        x={viewBox.cx}
+                                        y={viewBox.cy}
+                                        textAnchor="middle"
+                                        dominantBaseline="middle"
+                                    >
+                                        <tspan
+                                            x={viewBox.cx}
+                                            y={viewBox.cy}
+                                            className="fill-foreground text-3xl font-bold"
+                                        >
+                                            {`$${(totalValue / 1000).toFixed(1)}k`}
+                                        </tspan>
+                                        <tspan
+                                            x={viewBox.cx}
+                                            y={(viewBox.cy || 0) + 24}
+                                            className="fill-muted-foreground"
+                                        >
+                                            Total
+                                        </tspan>
+                                    </text>
+                                )
+                            }
+                        }}
+                    />
+                </Pie>
+                <ChartLegend
+                    content={<ChartLegendContent nameKey="name" />}
+                    verticalAlign="bottom"
+                    height={50}
+                />
+            </RechartsPieChart>
         </ChartContainer>
     );
 }

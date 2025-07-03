@@ -20,7 +20,6 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import {
-  BarChart,
   CreditCard,
   DollarSign,
   ShoppingCart,
@@ -31,6 +30,7 @@ import { monthlySummary } from '@/lib/data';
 import type { Invoice, Purchase } from '@/lib/types';
 import { format } from 'date-fns';
 import { DashboardChart } from '@/components/dashboard-chart';
+import type { ChartConfig } from '@/components/ui/chart';
 
 export default function Dashboard() {
   const [invoices] = useLocalStorage<Invoice[]>('invoices', []);
@@ -55,16 +55,24 @@ export default function Dashboard() {
   
   const activePurchases = purchases.filter(p => p.status === 'pending').length;
 
+  const totalMonthlyRevenue = monthlySummary.reduce((acc, curr) => acc + curr.revenue, 0);
+  const totalMonthlyPurchases = monthlySummary.reduce((acc, curr) => acc + curr.purchases, 0);
+
+  const pieData = [
+    { name: 'Revenue', value: totalMonthlyRevenue, fill: 'var(--color-Revenue)' },
+    { name: 'Purchases', value: totalMonthlyPurchases, fill: 'var(--color-Purchases)' },
+  ];
+
   const chartConfig = {
-    revenue: {
+    Revenue: {
       label: 'Revenue',
       color: 'hsl(var(--chart-1))',
     },
-    purchases: {
+    Purchases: {
       label: 'Purchases',
       color: 'hsl(var(--chart-2))',
     },
-  };
+  } satisfies ChartConfig;
   
   if (loading) {
     return (
@@ -110,7 +118,7 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <BarChart className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -141,9 +149,12 @@ export default function Dashboard() {
         <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Overview</CardTitle>
+            <CardDescription>
+                A summary of revenue vs. purchases.
+            </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <DashboardChart data={monthlySummary} chartConfig={chartConfig} />
+            <DashboardChart data={pieData} chartConfig={chartConfig} />
           </CardContent>
         </Card>
         <Card className="lg:col-span-3">
