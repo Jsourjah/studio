@@ -296,7 +296,9 @@ export default function InvoicesPage() {
                       </TableCell>
                       <TableCell>{invoice.customer}</TableCell>
                       <TableCell>
-                        {invoice.date ? format(new Date(invoice.date), 'MM/dd/yyyy') : 'N/A'}
+                        {invoice.date && !isNaN(new Date(invoice.date).getTime())
+                          ? format(new Date(invoice.date), 'MM/dd/yyyy')
+                          : 'N/A'}
                       </TableCell>
                       <TableCell>
                         <Badge

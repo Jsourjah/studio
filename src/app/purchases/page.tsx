@@ -134,9 +134,11 @@ export default function PurchasesPage() {
                 {sortedPurchases.map((purchase, index) => (
                   <TableRow key={purchase.id || index}>
                     <TableCell className="font-medium truncate max-w-[100px]">{purchase.id || ''}</TableCell>
-                    <TableCell>{purchase.supplier}</TableCell>
+                    <TableCell>{purchase.supplier || 'N/A'}</TableCell>
                     <TableCell>
-                      {purchase.date ? format(new Date(purchase.date), 'MM/dd/yyyy') : 'N/A'}
+                      {purchase.date && !isNaN(new Date(purchase.date).getTime())
+                        ? format(new Date(purchase.date), 'MM/dd/yyyy')
+                        : 'N/A'}
                     </TableCell>
                     <TableCell>
                       <Badge

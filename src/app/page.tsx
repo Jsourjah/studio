@@ -186,7 +186,9 @@ export default function Dashboard() {
                     <TableCell>
                       <div className="font-medium">{invoice.customer}</div>
                       <div className="text-sm text-muted-foreground">
-                        {invoice.date ? format(new Date(invoice.date), 'PPP') : 'No date'}
+                        {invoice.date && !isNaN(new Date(invoice.date).getTime())
+                          ? format(new Date(invoice.date), 'PPP')
+                          : 'No date'}
                       </div>
                     </TableCell>
                     <TableCell>

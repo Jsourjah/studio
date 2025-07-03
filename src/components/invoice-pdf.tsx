@@ -40,7 +40,7 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
       {/* Invoice Details */}
       <div className="absolute" style={{ top: '480px', left: '112px', width: '500px' }}>
           <p><span className="font-medium">Invoice #:</span> {invoice.id}</p>
-          <p className="mt-2"><span className="font-medium">Date:</span> {format(new Date(invoice.date), 'PPP')}</p>
+          <p className="mt-2"><span className="font-medium">Date:</span> {invoice.date && !isNaN(new Date(invoice.date).getTime()) ? format(new Date(invoice.date), 'PPP') : 'N/A'}</p>
       </div>
       
       <div className="absolute" style={{ top: '680px', left: '112px', right: '112px' }}>

@@ -149,7 +149,11 @@ export default function ReportsPage() {
                 <TableRow key={purchase.id || index}>
                   <TableCell className="font-medium truncate max-w-[100px]">{(purchase.id || '').substring(0, 8).toUpperCase()}</TableCell>
                   <TableCell>{purchase.supplier}</TableCell>
-                  <TableCell>{purchase.date ? format(new Date(purchase.date), 'MM/dd/yyyy') : 'N/A'}</TableCell>
+                  <TableCell>
+                    {purchase.date && !isNaN(new Date(purchase.date).getTime())
+                      ? format(new Date(purchase.date), 'MM/dd/yyyy')
+                      : 'N/A'}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={statusStyles[purchase.status] || ''}>
                       {(purchase.status || 'unknown').charAt(0).toUpperCase() + (purchase.status || 'unknown').slice(1)}
