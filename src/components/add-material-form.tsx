@@ -61,10 +61,10 @@ export function AddMaterialForm({ onAddMaterial, onUpdateMaterial, materialToEdi
     } else {
       form.reset({ name: '', quantity: 0, costPerUnit: 0 });
     }
-  }, [materialToEdit, form]);
+  }, [materialToEdit, form.reset]);
 
   function onSubmit(values: z.infer<typeof materialSchema>) {
-    if (isEditMode) {
+    if (isEditMode && materialToEdit) {
       onUpdateMaterial({ ...values, id: materialToEdit.id });
     } else {
       onAddMaterial(values);
