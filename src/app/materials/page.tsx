@@ -19,7 +19,25 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, Database } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Loader2, Database, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { initialMaterials } from '@/lib/data';
 import type { Material } from '@/lib/types';
 import { AddMaterialForm } from '@/components/add-material-form';
@@ -33,6 +51,8 @@ export default function MaterialsPage() {
   const [materials, setMaterials] = useLocalStorage<Material[]>('materials', []);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [materialToDelete, setMaterialToDelete] = useState<string | null>(null);
+  const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
 
   useEffect(() => {
     setLoading(false);
@@ -44,6 +64,18 @@ export default function MaterialsPage() {
       ...newMaterialData,
     };
     setMaterials(prevMaterials => [...prevMaterials, newMaterial]);
+  };
+  
+  const handleUpdateMaterial = (updatedMaterial: Material) => {
+    setMaterials(prev => 
+      prev.map(m => m.id === updatedMaterial.id ? updatedMaterial : m)
+    );
+    setMaterialToEdit(null);
+  };
+
+  const handleDeleteMaterial = (id: string) => {
+    setMaterials(prev => prev.filter(m => m.id !== id));
+    setMaterialToDelete(null);
   };
   
   const seedData = () => {
@@ -66,72 +98,130 @@ export default function MaterialsPage() {
   }
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Materials</h2>
-        <div className="flex items-center space-x-2">
-          <AddMaterialForm onAddMaterial={handleAddMaterial} />
+    <>
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Materials</h2>
+          <div className="flex items-center space-x-2">
+            <AddMaterialForm 
+              onAddMaterial={handleAddMaterial} 
+              onUpdateMaterial={handleUpdateMaterial}
+              materialToEdit={materialToEdit}
+              setMaterialToEdit={setMaterialToEdit}
+            />
+          </div>
         </div>
+
+        {materials.length === 0 ? (
+           <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>No Materials Found</CardTitle>
+              <CardDescription>
+                Your materials list is empty. You can add a new one or load
+                sample data to get started.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={seedData} disabled={isSeeding}>
+                {isSeeding ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Database className="mr-2 h-4 w-4" />
+                )}
+                Load Sample Materials
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Materials Inventory</CardTitle>
+              <CardDescription>
+                Manage your raw materials and stock levels.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Material ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Quantity in Stock</TableHead>
+                    <TableHead className="text-right">Cost per Unit</TableHead>
+                    <TableHead className="text-right">Total Value</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {materials.map((material) => (
+                    <TableRow key={material.id}>
+                      <TableCell className="font-medium truncate max-w-[100px]">{material.id.substring(0, 8).toUpperCase()}</TableCell>
+                      <TableCell>{material.name}</TableCell>
+                      <TableCell>{material.quantity}</TableCell>
+                      <TableCell className="text-right">
+                        Rs.{material.costPerUnit.toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        Rs.{(material.quantity * material.costPerUnit).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => setMaterialToEdit(material)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                              onClick={() => setMaterialToDelete(material.id)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {materials.length === 0 ? (
-         <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>No Materials Found</CardTitle>
-            <CardDescription>
-              Your materials list is empty. You can add a new one or load
-              sample data to get started.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={seedData} disabled={isSeeding}>
-              {isSeeding ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Database className="mr-2 h-4 w-4" />
-              )}
-              Load Sample Materials
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Materials Inventory</CardTitle>
-            <CardDescription>
-              Manage your raw materials and stock levels.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Material ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Quantity in Stock</TableHead>
-                  <TableHead className="text-right">Cost per Unit</TableHead>
-                  <TableHead className="text-right">Total Value</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {materials.map((material) => (
-                  <TableRow key={material.id}>
-                    <TableCell className="font-medium truncate max-w-[100px]">{material.id.substring(0, 8).toUpperCase()}</TableCell>
-                    <TableCell>{material.name}</TableCell>
-                    <TableCell>{material.quantity}</TableCell>
-                    <TableCell className="text-right">
-                      Rs.{material.costPerUnit.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      Rs.{(material.quantity * material.costPerUnit).toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+      <AlertDialog
+        open={!!materialToDelete}
+        onOpenChange={(open) => !open && setMaterialToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this material.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => handleDeleteMaterial(materialToDelete!)}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -36,10 +36,15 @@ const materialSchema = z.object({
 
 type AddMaterialFormProps = {
   onAddMaterial: (newMaterial: Omit<Material, 'id'>) => void;
+  onUpdateMaterial: (updatedMaterial: Material) => void;
+  materialToEdit: Material | null;
+  setMaterialToEdit: (material: Material | null) => void;
 };
 
-export function AddMaterialForm({ onAddMaterial }: AddMaterialFormProps) {
+export function AddMaterialForm({ onAddMaterial, onUpdateMaterial, materialToEdit, setMaterialToEdit }: AddMaterialFormProps) {
   const [open, setOpen] = useState(false);
+  const isEditMode = !!materialToEdit;
+
   const form = useForm<z.infer<typeof materialSchema>>({
     resolver: zodResolver(materialSchema),
     defaultValues: {
@@ -49,24 +54,48 @@ export function AddMaterialForm({ onAddMaterial }: AddMaterialFormProps) {
     },
   });
 
+  useEffect(() => {
+    if (materialToEdit) {
+      form.reset(materialToEdit);
+      setOpen(true);
+    } else {
+      form.reset({ name: '', quantity: 0, costPerUnit: 0 });
+    }
+  }, [materialToEdit, form]);
+
   function onSubmit(values: z.infer<typeof materialSchema>) {
-    onAddMaterial(values);
-    form.reset({ name: '', quantity: 0, costPerUnit: 0 });
+    if (isEditMode) {
+      onUpdateMaterial({ ...values, id: materialToEdit.id });
+    } else {
+      onAddMaterial(values);
+    }
     setOpen(false);
   }
 
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setMaterialToEdit(null);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add New Material
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {!isEditMode && (
+        <DialogTrigger asChild>
+          <Button onClick={() => setOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Add New Material
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Material</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Material' : 'Add New Material'}</DialogTitle>
           <DialogDescription>
-            Fill in the details below to add a new raw material.
+            {isEditMode 
+              ? 'Update the details for this material.' 
+              : 'Fill in the details below to add a new raw material.'
+            }
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -115,7 +144,7 @@ export function AddMaterialForm({ onAddMaterial }: AddMaterialFormProps) {
             </div>
             <DialogFooter>
               <Button type="submit">
-                Add Material
+                {isEditMode ? 'Save Changes' : 'Add Material'}
               </Button>
             </DialogFooter>
           </form>
