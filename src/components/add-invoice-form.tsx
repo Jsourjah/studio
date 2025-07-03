@@ -47,7 +47,7 @@ import { InvoicePdf } from '@/components/invoice-pdf';
 const invoiceItemSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
   quantity: z.coerce.number().min(1, 'Quantity must be at least 1.'),
-  price: z.coerce.number().positive('Price must be a positive number.'),
+  price: z.coerce.number().min(0, 'Price must be a non-negative number.'),
   materialId: z.string().optional(),
 });
 
@@ -183,7 +183,7 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
             <PlusCircle className="mr-2 h-4 w-4" /> Add New Invoice
           </Button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-3xl bg-card">
+        <DialogContent className="sm:max-w-4xl bg-card">
           <DialogHeader>
             <DialogTitle>Add New Invoice</DialogTitle>
             <DialogDescription>
@@ -270,7 +270,7 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
                         control={form.control}
                         name={`items.${index}.description`}
                         render={({ field }) => (
-                          <FormItem className="col-span-12 md:col-span-5">
+                          <FormItem className="col-span-12 md:col-span-3">
                             <FormLabel className={cn(index !== 0 && "sr-only")}>Description</FormLabel>
                             <FormControl>
                               <Input placeholder="Item or service description" {...field} />
@@ -292,6 +292,14 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
                           </FormItem>
                         )}
                       />
+                      <FormItem className="col-span-6 md:col-span-2">
+                        <FormLabel className={cn(index !== 0 && "sr-only")}>Cost</FormLabel>
+                        <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+                          {`Rs. ${
+                            (materials.find(m => m.id === watchedItems[index]?.materialId)?.costPerUnit || 0).toFixed(2)
+                          }`}
+                        </div>
+                      </FormItem>
                        <FormField
                         control={form.control}
                         name={`items.${index}.price`}
@@ -305,13 +313,14 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
                           </FormItem>
                         )}
                       />
-                    <div className="col-span-12 md:col-span-2 flex items-end">
-                       <p className="text-sm font-medium w-full text-right pt-2">
+                    <FormItem className="col-span-6 md:col-span-2">
+                      <FormLabel className={cn(index !== 0 && "sr-only")}>Total</FormLabel>
+                      <div className="flex h-10 w-full items-center justify-end rounded-md px-3 py-2 text-sm font-medium">
                          Rs.{((watchedItems[index]?.quantity || 0) * (watchedItems[index]?.price || 0)).toFixed(2)}
-                       </p>
-                    </div>
+                      </div>
+                    </FormItem>
                     <div className="col-span-12 md:col-span-1 flex items-end justify-end">
-                       <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => remove(index)}>
+                       <Button type="button" variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground hover:text-destructive" onClick={() => remove(index)}>
                           <Trash2 className="h-4 w-4" />
                        </Button>
                     </div>
@@ -418,3 +427,5 @@ export function AddInvoiceForm({ onAddInvoice, materials }: AddInvoiceFormProps)
     </>
   );
 }
+
+    
