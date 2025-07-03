@@ -79,7 +79,11 @@ export default function PurchasesPage() {
     );
   }
 
-  const sortedPurchases = [...purchases].filter(Boolean).sort((a,b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+  const sortedPurchases = [...purchases].filter(Boolean).sort((a, b) => {
+    const timeA = a.date ? new Date(a.date).getTime() : 0;
+    const timeB = b.date ? new Date(b.date).getTime() : 0;
+    return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
+  });
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">

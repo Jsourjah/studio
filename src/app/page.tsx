@@ -42,7 +42,11 @@ export default function Dashboard() {
 
   const unpaidInvoices = [...invoices]
     .filter((invoice) => invoice && (invoice.status === 'unpaid' || invoice.status === 'overdue'))
-    .sort((a,b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
+    .sort((a, b) => {
+      const timeA = a.date ? new Date(a.date).getTime() : 0;
+      const timeB = b.date ? new Date(b.date).getTime() : 0;
+      return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
+    })
     .slice(0, 5);
     
   const totalSales = invoices

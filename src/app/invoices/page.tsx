@@ -228,8 +228,11 @@ export default function InvoicesPage() {
     );
   }
 
-  const sortedInvoices = [...invoices].filter(Boolean).sort(
-    (a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime()
+  const sortedInvoices = [...invoices].filter(Boolean).sort((a, b) => {
+      const timeA = a.date ? new Date(a.date).getTime() : 0;
+      const timeB = b.date ? new Date(b.date).getTime() : 0;
+      return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
+    }
   );
 
   return (
