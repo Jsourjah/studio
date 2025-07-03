@@ -1,8 +1,8 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import useLocalStorage from '@/hooks/use-local-storage';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -98,62 +98,70 @@ export default function Dashboard() {
       <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              Rs.{totalMonthlyRevenue.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              From monthly summary data
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Unpaid Invoices
-            </CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Rs.{unpaidAmount.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              Total amount outstanding
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              Rs.{totalSales.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Sum of all paid invoices
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Monthly Purchases
-            </CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">Rs.{totalMonthlyPurchases.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              From monthly summary data
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/reports">
+          <Card className="hover:bg-muted/50 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                Rs.{totalMonthlyRevenue.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                From monthly summary data
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/invoices">
+          <Card className="hover:bg-muted/50 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Unpaid Invoices
+              </CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Rs.{unpaidAmount.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                Total amount outstanding
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/invoices">
+          <Card className="hover:bg-muted/50 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                Rs.{totalSales.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Sum of all paid invoices
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/purchases">
+          <Card className="hover:bg-muted/50 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Monthly Purchases
+              </CardTitle>
+              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Rs.{totalMonthlyPurchases.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">
+                From monthly summary data
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
