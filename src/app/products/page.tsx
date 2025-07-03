@@ -19,7 +19,25 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, Database, Plus } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Loader2, Database, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { initialProductBundles, initialMaterials } from '@/lib/data';
 import type { ProductBundle, Material } from '@/lib/types';
 import { AddProductForm } from '@/components/add-product-form';
@@ -35,6 +53,8 @@ export default function ProductsPage() {
   const [materials] = useLocalStorage<Material[]>('materials', []);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [productToEdit, setProductToEdit] = useState<ProductBundle | null>(null);
 
   useEffect(() => {
     setLoading(false);
@@ -46,6 +66,18 @@ export default function ProductsPage() {
       ...newProductData,
     };
     setProductBundles(prev => [...prev, newProduct]);
+  };
+  
+  const handleUpdateProduct = (updatedProduct: ProductBundle) => {
+    setProductBundles(prev => 
+      prev.map(p => p.id === updatedProduct.id ? updatedProduct : p)
+    );
+    setProductToEdit(null);
+  };
+
+  const handleDeleteProduct = (id: string) => {
+    setProductBundles(prev => prev.filter(p => p.id !== id));
+    setProductToDelete(null);
   };
   
   const seedData = () => {
@@ -71,73 +103,130 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Products</h2>
-        <div className="flex items-center space-x-2">
-          <AddProductForm onAddProduct={handleAddProduct} materials={materials} />
+    <>
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Products</h2>
+          <div className="flex items-center space-x-2">
+            <AddProductForm 
+              onAddProduct={handleAddProduct} 
+              materials={materials}
+              onUpdateProduct={handleUpdateProduct}
+              productToEdit={productToEdit}
+              setProductToEdit={setProductToEdit}
+            />
+          </div>
         </div>
+
+        {productBundles.length === 0 ? (
+           <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>No Products Found</CardTitle>
+              <CardDescription>
+                Your product list is empty. A product is a bundle of materials you can sell as a single item.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={seedData} disabled={isSeeding}>
+                {isSeeding ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Database className="mr-2 h-4 w-4" />
+                )}
+                Load Sample Product
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Product & Service List</CardTitle>
+              <CardDescription>
+                Manage your products, which are bundles of materials.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Product Name</TableHead>
+                    <TableHead>Components</TableHead>
+                    <TableHead className="text-right">Selling Price</TableHead>
+                    <TableHead><span className="sr-only">Actions</span></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {productBundles.map((bundle) => (
+                      <TableRow key={bundle.id}>
+                          <TableCell className="font-medium">{bundle.name}</TableCell>
+                          <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                  {bundle.items.map((item, index) => (
+                                      <Badge key={index} variant="outline">
+                                          {item.quantity}x {getMaterialName(item.materialId)}
+                                      </Badge>
+                                  ))}
+                              </div>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                              Rs.{(bundle.price || 0).toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Toggle menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem onClick={() => setProductToEdit(bundle)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                                  onClick={() => setProductToDelete(bundle.id)}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                      </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {productBundles.length === 0 ? (
-         <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>No Products Found</CardTitle>
-            <CardDescription>
-              Your product list is empty. A product is a bundle of materials you can sell as a single item.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={seedData} disabled={isSeeding}>
-              {isSeeding ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Database className="mr-2 h-4 w-4" />
-              )}
-              Load Sample Product
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Product & Service List</CardTitle>
-            <CardDescription>
-              Manage your products, which are bundles of materials.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product Name</TableHead>
-                  <TableHead>Components</TableHead>
-                  <TableHead className="text-right">Selling Price</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {productBundles.map((bundle) => (
-                    <TableRow key={bundle.id}>
-                        <TableCell className="font-medium">{bundle.name}</TableCell>
-                        <TableCell>
-                            <div className="flex flex-wrap gap-1">
-                                {bundle.items.map((item, index) => (
-                                    <Badge key={index} variant="outline">
-                                        {item.quantity}x {getMaterialName(item.materialId)}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                            Rs.{(bundle.price || 0).toFixed(2)}
-                        </TableCell>
-                    </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+      <AlertDialog
+        open={!!productToDelete}
+        onOpenChange={(open) => !open && setProductToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this product.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => handleDeleteProduct(productToDelete!)}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

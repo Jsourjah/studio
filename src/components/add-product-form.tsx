@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -48,11 +48,16 @@ const productSchema = z.object({
 
 type AddProductFormProps = {
   onAddProduct: (newProduct: Omit<ProductBundle, 'id'>) => void;
+  onUpdateProduct: (updatedProduct: ProductBundle) => void;
   materials: Material[];
+  productToEdit: ProductBundle | null;
+  setProductToEdit: (product: ProductBundle | null) => void;
 };
 
-export function AddProductForm({ onAddProduct, materials }: AddProductFormProps) {
+export function AddProductForm({ onAddProduct, onUpdateProduct, materials, productToEdit, setProductToEdit }: AddProductFormProps) {
   const [open, setOpen] = useState(false);
+  const isEditMode = !!productToEdit;
+
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -62,29 +67,58 @@ export function AddProductForm({ onAddProduct, materials }: AddProductFormProps)
     },
   });
 
+  useEffect(() => {
+    if (productToEdit) {
+      form.reset(productToEdit);
+      setOpen(true);
+    } else {
+      form.reset({
+        name: '',
+        price: 0,
+        items: [{ materialId: '', quantity: 1 }],
+      });
+    }
+  }, [productToEdit, form]);
+
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "items"
   });
 
   function onSubmit(values: z.infer<typeof productSchema>) {
-    onAddProduct(values);
-    form.reset({ name: '', price: 0, items: [{ materialId: '', quantity: 1 }] });
+    if (isEditMode) {
+      onUpdateProduct({ ...values, id: productToEdit.id });
+    } else {
+      onAddProduct(values);
+    }
     setOpen(false);
   }
 
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+        setProductToEdit(null);
+    }
+  };
+
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add New Product
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {!isEditMode && (
+        <DialogTrigger asChild>
+          <Button onClick={() => setOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Add New Product
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Add New Product</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Product' : 'Add New Product'}</DialogTitle>
           <DialogDescription>
-            Create a new product by bundling existing materials.
+            {isEditMode 
+              ? 'Update the details for your product.' 
+              : 'Create a new product by bundling existing materials.'
+            }
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -175,7 +209,7 @@ export function AddProductForm({ onAddProduct, materials }: AddProductFormProps)
 
             <DialogFooter>
               <Button type="submit">
-                Add Product
+                {isEditMode ? 'Save Changes' : 'Add Product'}
               </Button>
             </DialogFooter>
           </form>
