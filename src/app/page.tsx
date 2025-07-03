@@ -101,10 +101,10 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              Rs.{totalRevenue.toLocaleString()}
+              Rs.{totalMonthlyRevenue.toLocaleString()}
             </div>
             <p className="text-xs text-muted-foreground">
-              From all paid invoices
+              From monthly summary data
             </p>
           </CardContent>
         </Card>
