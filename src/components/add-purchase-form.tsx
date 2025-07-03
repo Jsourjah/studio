@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { CalendarIcon, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -49,10 +49,14 @@ const purchaseSchema = z.object({
 
 type AddPurchaseFormProps = {
   onAddPurchase: (newPurchase: Omit<Purchase, 'id'>) => void;
+  onUpdatePurchase: (updatedPurchase: Purchase) => void;
+  purchaseToEdit: Purchase | null;
+  setPurchaseToEdit: (purchase: Purchase | null) => void;
 };
 
-export function AddPurchaseForm({ onAddPurchase }: AddPurchaseFormProps) {
+export function AddPurchaseForm({ onAddPurchase, onUpdatePurchase, purchaseToEdit, setPurchaseToEdit }: AddPurchaseFormProps) {
   const [open, setOpen] = useState(false);
+  const isEditMode = !!purchaseToEdit;
 
   const form = useForm<z.infer<typeof purchaseSchema>>({
     resolver: zodResolver(purchaseSchema),
@@ -65,33 +69,62 @@ export function AddPurchaseForm({ onAddPurchase }: AddPurchaseFormProps) {
     },
   });
 
+  useEffect(() => {
+    if (purchaseToEdit) {
+      form.reset({
+        ...purchaseToEdit,
+        date: purchaseToEdit.date ? parseISO(purchaseToEdit.date) : new Date(),
+      });
+      setOpen(true);
+    } else {
+      form.reset({
+        supplier: '',
+        itemCount: 1,
+        totalAmount: 0,
+        date: new Date(),
+        status: 'pending',
+      });
+    }
+  }, [purchaseToEdit, form]);
+
   function onSubmit(values: z.infer<typeof purchaseSchema>) {
-    onAddPurchase({
+    const purchaseData = {
       ...values,
       date: values.date.toISOString(),
-    });
-    form.reset({
-      supplier: '',
-      itemCount: 1,
-      totalAmount: 0,
-      date: new Date(),
-      status: 'pending',
-    });
+    };
+    
+    if (isEditMode && purchaseToEdit) {
+      onUpdatePurchase({ ...purchaseData, id: purchaseToEdit.id });
+    } else {
+      onAddPurchase(purchaseData);
+    }
     setOpen(false);
   }
 
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setPurchaseToEdit(null);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add New Purchase
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {!isEditMode && (
+         <DialogTrigger asChild>
+          <Button onClick={() => setOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Add New Purchase
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Purchase</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Purchase' : 'Add New Purchase'}</DialogTitle>
           <DialogDescription>
-            Fill in the details below to record a new purchase.
+            {isEditMode 
+              ? 'Update the details for this purchase record.'
+              : 'Fill in the details below to record a new purchase.'
+            }
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -206,7 +239,7 @@ export function AddPurchaseForm({ onAddPurchase }: AddPurchaseFormProps) {
               </div>
 
             <DialogFooter>
-              <Button type="submit">Add Purchase</Button>
+              <Button type="submit">{isEditMode ? 'Save Changes' : 'Add Purchase'}</Button>
             </DialogFooter>
           </form>
         </Form>

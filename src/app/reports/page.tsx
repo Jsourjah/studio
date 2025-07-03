@@ -143,15 +143,12 @@ export default function ReportsPage() {
                 <TableHead>Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Total Amount</TableHead>
-                <TableHead>
-                  <span className="sr-only">Actions</span>
-                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {recentPurchases.map((purchase, index) => (
                 <TableRow key={purchase.id || index}>
-                  <TableCell className="font-medium truncate max-w-[100px]">{(purchase.id || '').substring(0, 8).toUpperCase()}</TableCell>
+                  <TableCell className="font-medium">{purchase.id}</TableCell>
                   <TableCell>{purchase.supplier}</TableCell>
                   <TableCell>
                     {purchase.date && !isNaN(new Date(purchase.date).getTime())
@@ -165,21 +162,6 @@ export default function ReportsPage() {
                   </TableCell>
                   <TableCell className="text-right font-medium">
                     Rs.{(purchase.totalAmount || 0).toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>View Details</DropdownMenuItem>
-                        <DropdownMenuItem>Update Status</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}

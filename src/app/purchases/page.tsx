@@ -19,8 +19,26 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Database } from 'lucide-react';
+import { Loader2, Database, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { purchases as initialPurchases } from '@/lib/data';
 import type { Purchase } from '@/lib/types';
 import { format } from 'date-fns';
@@ -40,6 +58,9 @@ export default function PurchasesPage() {
   const [nextPurchaseId, setNextPurchaseId] = useLocalStorage<number>('nextPurchaseId', 100);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
+  const [purchaseToDelete, setPurchaseToDelete] = useState<string | null>(null);
+  const [purchaseToEdit, setPurchaseToEdit] = useState<Purchase | null>(null);
+
 
   useEffect(() => {
     setLoading(false);
@@ -55,6 +76,18 @@ export default function PurchasesPage() {
     setNextPurchaseId(prevId => prevId + 1);
   };
   
+  const handleUpdatePurchase = (updatedPurchase: Purchase) => {
+    setPurchases(prev => 
+      prev.map(p => p.id === updatedPurchase.id ? updatedPurchase : p)
+    );
+    setPurchaseToEdit(null);
+  };
+
+  const handleDeletePurchase = (id: string) => {
+    setPurchases(prev => prev.filter(p => p.id !== id));
+    setPurchaseToDelete(null);
+  };
+
   const seedData = () => {
     setIsSeeding(true);
     let currentId = nextPurchaseId;
@@ -86,86 +119,144 @@ export default function PurchasesPage() {
   });
 
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Purchases</h2>
-        <div className="flex items-center space-x-2">
-          <AddPurchaseForm onAddPurchase={handleAddPurchase} />
+    <>
+      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Purchases</h2>
+          <div className="flex items-center space-x-2">
+            <AddPurchaseForm 
+              onAddPurchase={handleAddPurchase}
+              purchaseToEdit={purchaseToEdit}
+              onUpdatePurchase={handleUpdatePurchase}
+              setPurchaseToEdit={setPurchaseToEdit}
+            />
+          </div>
         </div>
+
+        {purchases.length === 0 ? (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>No Purchases Found</CardTitle>
+              <CardDescription>
+                Your purchase list is empty. You can add a new purchase or load
+                sample data to get started.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={seedData} disabled={isSeeding}>
+                {isSeeding ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Database className="mr-2 h-4 w-4" />
+                )}
+                Load Sample Purchases
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Purchase Orders</CardTitle>
+              <CardDescription>
+                Monitor all your purchase orders and their statuses.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Purchase ID</TableHead>
+                    <TableHead>Supplier</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Items</TableHead>
+                    <TableHead className="text-right">Total Amount</TableHead>
+                    <TableHead>
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedPurchases.map((purchase, index) => (
+                    <TableRow key={purchase.id || index}>
+                      <TableCell className="font-medium">{purchase.id || ''}</TableCell>
+                      <TableCell>{purchase.supplier || 'N/A'}</TableCell>
+                      <TableCell>
+                        {purchase.date && !isNaN(new Date(purchase.date).getTime())
+                          ? format(new Date(purchase.date), 'MM/dd/yyyy')
+                          : 'N/A'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={statusStyles[purchase.status] || ''}
+                        >
+                          {(purchase.status || 'unknown').charAt(0).toUpperCase() +
+                            (purchase.status || 'unknown').slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {purchase.itemCount || 0}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        Rs.{(purchase.totalAmount || 0).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Toggle menu</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => setPurchaseToEdit(purchase)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                              onClick={() => setPurchaseToDelete(purchase.id)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
-      {purchases.length === 0 ? (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>No Purchases Found</CardTitle>
-            <CardDescription>
-              Your purchase list is empty. You can add a new purchase or load
-              sample data to get started.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={seedData} disabled={isSeeding}>
-              {isSeeding ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Database className="mr-2 h-4 w-4" />
-              )}
-              Load Sample Purchases
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Purchase Orders</CardTitle>
-            <CardDescription>
-              Monitor all your purchase orders and their statuses.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Purchase ID</TableHead>
-                  <TableHead>Supplier</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Items</TableHead>
-                  <TableHead className="text-right">Total Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedPurchases.map((purchase, index) => (
-                  <TableRow key={purchase.id || index}>
-                    <TableCell className="font-medium truncate max-w-[100px]">{purchase.id || ''}</TableCell>
-                    <TableCell>{purchase.supplier || 'N/A'}</TableCell>
-                    <TableCell>
-                      {purchase.date && !isNaN(new Date(purchase.date).getTime())
-                        ? format(new Date(purchase.date), 'MM/dd/yyyy')
-                        : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={statusStyles[purchase.status] || ''}
-                      >
-                        {(purchase.status || 'unknown').charAt(0).toUpperCase() +
-                          (purchase.status || 'unknown').slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {purchase.itemCount || 0}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      Rs.{(purchase.totalAmount || 0).toFixed(2)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+      <AlertDialog
+        open={!!purchaseToDelete}
+        onOpenChange={(open) => !open && setPurchaseToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete this purchase record.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => handleDeletePurchase(purchaseToDelete!)}
+            >
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
