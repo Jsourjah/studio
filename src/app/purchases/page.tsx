@@ -34,14 +34,9 @@ const statusStyles: { [key: string]: string } = {
     'bg-gray-500/20 text-gray-700 hover:bg-gray-500/30 dark:bg-gray-500/10 dark:text-gray-400',
 };
 
-// Function to generate a simple unique ID
-const generateUniqueId = () => {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-};
-
-
 export default function PurchasesPage() {
   const [purchases, setPurchases] = useLocalStorage<Purchase[]>('purchases', []);
+  const [nextPurchaseId, setNextPurchaseId] = useLocalStorage<number>('nextPurchaseId', 100);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
 
@@ -51,11 +46,17 @@ export default function PurchasesPage() {
   
   const seedData = () => {
     setIsSeeding(true);
-    const seededPurchases = initialPurchases.map(purchase => ({
-      ...purchase,
-      id: generateUniqueId(),
-    }));
+    let currentId = nextPurchaseId;
+    const seededPurchases = initialPurchases.map(purchase => {
+      const newPurchase = {
+        ...purchase,
+        id: `P${String(currentId).padStart(3, '0')}`,
+      };
+      currentId++;
+      return newPurchase;
+    });
     setPurchases(seededPurchases);
+    setNextPurchaseId(currentId);
     setIsSeeding(false);
   };
 
@@ -123,7 +124,7 @@ export default function PurchasesPage() {
               <TableBody>
                 {sortedPurchases.map((purchase, index) => (
                   <TableRow key={purchase.id || index}>
-                    <TableCell className="font-medium truncate max-w-[100px]">{(purchase.id || '').substring(0, 8).toUpperCase()}</TableCell>
+                    <TableCell className="font-medium truncate max-w-[100px]">{purchase.id || ''}</TableCell>
                     <TableCell>{purchase.supplier}</TableCell>
                     <TableCell>
                       {purchase.date ? format(new Date(purchase.date), 'MM/dd/yyyy') : 'N/A'}

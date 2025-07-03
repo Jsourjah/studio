@@ -43,13 +43,9 @@ import type { ProductBundle, Material } from '@/lib/types';
 import { AddProductForm } from '@/components/add-product-form';
 import { Badge } from '@/components/ui/badge';
 
-// Function to generate a simple unique ID
-const generateUniqueId = () => {
-  return Math.random().toString(36).substring(2, 9);
-};
-
 export default function ProductsPage() {
   const [productBundles, setProductBundles] = useLocalStorage<ProductBundle[]>('productBundles', []);
+  const [nextProductId, setNextProductId] = useLocalStorage<number>('nextProductId', 100);
   const [materials] = useLocalStorage<Material[]>('materials', []);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
@@ -61,11 +57,13 @@ export default function ProductsPage() {
   }, []);
 
   const handleAddProduct = (newProductData: Omit<ProductBundle, 'id'>) => {
+    const newId = `P${String(nextProductId).padStart(3, '0')}`;
     const newProduct: ProductBundle = {
-      id: generateUniqueId(),
+      id: newId,
       ...newProductData,
     };
     setProductBundles(prev => [...prev, newProduct]);
+    setNextProductId(prevId => prevId + 1);
   };
   
   const handleUpdateProduct = (updatedProduct: ProductBundle) => {
@@ -82,11 +80,17 @@ export default function ProductsPage() {
   
   const seedData = () => {
     setIsSeeding(true);
-    setProductBundles(prev => {
-      const existingIds = new Set(prev.map(p => p.id));
-      const newBundles = initialProductBundles.filter(ib => !existingIds.has(ib.id));
-      return [...prev, ...newBundles];
+    let currentId = nextProductId;
+    const seededProducts = initialProductBundles.map((bundle) => {
+      const newProduct = {
+        ...bundle,
+        id: `P${String(currentId).padStart(3, '0')}`,
+      };
+      currentId++;
+      return newProduct;
     });
+    setProductBundles(seededProducts);
+    setNextProductId(currentId);
     setIsSeeding(false);
   };
   
@@ -149,6 +153,7 @@ export default function ProductsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Product ID</TableHead>
                     <TableHead>Product Name</TableHead>
                     <TableHead>Components</TableHead>
                     <TableHead className="text-right">Selling Price</TableHead>
@@ -158,6 +163,7 @@ export default function ProductsPage() {
                 <TableBody>
                   {productBundles.filter(Boolean).map((bundle, index) => (
                       <TableRow key={bundle.id || index}>
+                          <TableCell className="font-medium">{bundle.id}</TableCell>
                           <TableCell className="font-medium">{bundle.name || 'N/A'}</TableCell>
                           <TableCell>
                               <div className="flex flex-wrap gap-1">

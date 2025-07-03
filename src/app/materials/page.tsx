@@ -42,13 +42,9 @@ import { initialMaterials } from '@/lib/data';
 import type { Material } from '@/lib/types';
 import { AddMaterialForm } from '@/components/add-material-form';
 
-// Function to generate a simple unique ID
-const generateUniqueId = () => {
-  return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-};
-
 export default function MaterialsPage() {
   const [materials, setMaterials] = useLocalStorage<Material[]>('materials', []);
+  const [nextMaterialId, setNextMaterialId] = useLocalStorage<number>('nextMaterialId', 100);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
   const [materialToDelete, setMaterialToDelete] = useState<string | null>(null);
@@ -59,11 +55,13 @@ export default function MaterialsPage() {
   }, []);
 
   const handleAddMaterial = (newMaterialData: Omit<Material, 'id'>) => {
+    const newId = `M${String(nextMaterialId).padStart(3, '0')}`;
     const newMaterial: Material = {
-      id: generateUniqueId(),
+      id: newId,
       ...newMaterialData,
     };
     setMaterials(prevMaterials => [...prevMaterials, newMaterial]);
+    setNextMaterialId(prevId => prevId + 1);
   };
   
   const handleUpdateMaterial = (updatedMaterial: Material) => {
@@ -80,12 +78,17 @@ export default function MaterialsPage() {
   
   const seedData = () => {
     setIsSeeding(true);
-    // Add only materials that are not already present
-    setMaterials(prev => {
-        const existingIds = new Set(prev.map(m => m.id));
-        const newMaterials = initialMaterials.filter(im => !existingIds.has(im.id));
-        return [...prev, ...newMaterials];
+    let currentId = nextMaterialId;
+    const seededMaterials = initialMaterials.map((material) => {
+      const newMaterial = {
+        ...material,
+        id: `M${String(currentId).padStart(3, '0')}`,
+      };
+      currentId++;
+      return newMaterial;
     });
+    setMaterials(seededMaterials);
+    setNextMaterialId(currentId);
     setIsSeeding(false);
   };
 
@@ -157,7 +160,7 @@ export default function MaterialsPage() {
                 <TableBody>
                   {materials.filter(Boolean).map((material, index) => (
                     <TableRow key={material.id || index}>
-                      <TableCell className="font-medium truncate max-w-[100px]">{(material.id || '').substring(0, 8).toUpperCase()}</TableCell>
+                      <TableCell className="font-medium truncate max-w-[100px]">{material.id || ''}</TableCell>
                       <TableCell>{material.name || 'N/A'}</TableCell>
                       <TableCell>{material.quantity || 0}</TableCell>
                       <TableCell className="text-right">
