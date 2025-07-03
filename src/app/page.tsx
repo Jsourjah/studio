@@ -41,7 +41,8 @@ export default function Dashboard() {
     setLoading(false);
   }, []);
 
-  const recentInvoices = [...invoices]
+  const unpaidInvoices = [...invoices]
+    .filter((invoice) => invoice.status === 'unpaid' || invoice.status === 'overdue')
     .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
     
@@ -50,7 +51,7 @@ export default function Dashboard() {
     .reduce((sum, invoice) => sum + invoice.amount, 0);
 
   const unpaidAmount = invoices
-    .filter((invoice) => invoice.status === 'unpaid')
+    .filter((invoice) => invoice.status === 'unpaid' || invoice.status === 'overdue')
     .reduce((sum, invoice) => sum + invoice.amount, 0);
   
   const activePurchases = purchases.filter(p => p.status === 'pending').length;
@@ -73,6 +74,15 @@ export default function Dashboard() {
       color: 'hsl(var(--chart-2))',
     },
   } satisfies ChartConfig;
+
+  const statusStyles: { [key in Invoice['status']]: string } = {
+    paid:
+      'bg-green-500/20 text-green-700 hover:bg-green-500/30 dark:bg-green-500/10 dark:text-green-400',
+    unpaid:
+      'bg-amber-500/20 text-amber-700 hover:bg-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400',
+    overdue:
+      'bg-red-500/20 text-red-700 hover:bg-red-500/30 dark:bg-red-500/10 dark:text-red-400',
+  };
   
   if (loading) {
     return (
@@ -159,9 +169,9 @@ export default function Dashboard() {
         </Card>
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>Recent Invoices</CardTitle>
+            <CardTitle>Recent Unpaid Invoices</CardTitle>
             <CardDescription>
-              The last 5 invoices created.
+              Your 5 most recent unpaid or overdue invoices.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -174,7 +184,7 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recentInvoices.map((invoice) => (
+                {unpaidInvoices.map((invoice) => (
                   <TableRow key={invoice.id}>
                     <TableCell>
                       <div className="font-medium">{invoice.customer}</div>
@@ -184,12 +194,8 @@ export default function Dashboard() {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={invoice.status === 'paid' ? 'default' : 'secondary'}
-                        className={
-                          invoice.status === 'paid'
-                            ? 'bg-green-500/20 text-green-700 hover:bg-green-500/30 dark:bg-green-500/10 dark:text-green-400'
-                            : 'bg-amber-500/20 text-amber-700 hover:bg-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400'
-                        }
+                        variant="outline"
+                        className={statusStyles[invoice.status]}
                       >
                         {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
                       </Badge>
