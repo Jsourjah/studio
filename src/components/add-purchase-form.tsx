@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -85,7 +86,7 @@ export function AddPurchaseForm({ onAddPurchase, onUpdatePurchase, purchaseToEdi
         status: 'pending',
       });
     }
-  }, [purchaseToEdit, form]);
+  }, [purchaseToEdit, form.reset]);
 
   function onSubmit(values: z.infer<typeof purchaseSchema>) {
     const purchaseData = {

@@ -78,7 +78,7 @@ export function AddProductForm({ onAddProduct, onUpdateProduct, materials, produ
         items: [{ materialId: '', quantity: 1 }],
       });
     }
-  }, [productToEdit, form]);
+  }, [productToEdit, form.reset]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
@@ -86,7 +86,7 @@ export function AddProductForm({ onAddProduct, onUpdateProduct, materials, produ
   });
 
   function onSubmit(values: z.infer<typeof productSchema>) {
-    if (isEditMode) {
+    if (isEditMode && productToEdit) {
       onUpdateProduct({ ...values, id: productToEdit.id });
     } else {
       onAddProduct(values);
