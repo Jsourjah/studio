@@ -13,16 +13,11 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
-import type { Invoice, Material, Purchase, ProductBundle } from '@/lib/types';
+import type { Invoice } from '@/lib/types';
 import { format } from 'date-fns';
-import { getCostOfInvoice } from '@/lib/calculations';
-
 
 export default function Dashboard() {
   const [invoices] = useLocalStorage<Invoice[]>('invoices', []);
-  const [materials] = useLocalStorage<Material[]>('materials', []);
-  const [purchases] = useLocalStorage<Purchase[]>('purchases', []);
-  const [productBundles] = useLocalStorage<ProductBundle[]>('productBundles', []);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,9 +25,6 @@ export default function Dashboard() {
   }, []);
 
   const safeInvoices = invoices || [];
-  const safeMaterials = materials || [];
-  const safePurchases = purchases || [];
-  const safeProductBundles = productBundles || [];
   
   const unpaidInvoices = [...safeInvoices]
     .filter((invoice) => invoice && (invoice.status === 'unpaid' || invoice.status === 'overdue'))
@@ -61,7 +53,7 @@ export default function Dashboard() {
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
       
-       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+       <div className="grid gap-4">
         <div className="col-span-12">
             <h3 className="text-2xl font-semibold tracking-tight">Recent Unpaid Invoices</h3>
             <p className="text-sm text-muted-foreground mb-4">Your 5 most recent unpaid or overdue invoices.</p>
