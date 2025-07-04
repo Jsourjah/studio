@@ -24,33 +24,21 @@ export function ReportGenerator({ children }: ReportGeneratorProps) {
       const canvas = await html2canvas(input, {
         scale: 2, // Higher scale for better quality
         useCORS: true,
-        backgroundColor: null, // Use transparent background
+        backgroundColor: '#ffffff', // Set background to white
       });
-
-      // Create a new canvas to add a white background
-      const finalCanvas = document.createElement('canvas');
-      finalCanvas.width = canvas.width;
-      finalCanvas.height = canvas.height;
-      const ctx = finalCanvas.getContext('2d');
-      if (ctx) {
-        // Check if we are in dark mode to set the correct background
-        const isDarkMode = document.documentElement.classList.contains('dark');
-        ctx.fillStyle = isDarkMode ? '#0a0e17' : '#f4f6fa'; // dark background or light background
-        ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-        ctx.drawImage(canvas, 0, 0);
-      }
       
-      const imgData = finalCanvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/png');
 
       const pdf = new jsPDF({
         orientation: 'portrait',
-        unit: 'px',
-        format: [finalCanvas.width, finalCanvas.height],
+        unit: 'pt',
+        format: 'a4',
       });
 
-      // Add padding to the PDF
-      const padding = 20;
-      pdf.addImage(imgData, 'PNG', padding, padding, finalCanvas.width - (padding * 2), finalCanvas.height - (padding * 2));
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save('business-report.pdf');
 
     } catch (error) {
@@ -76,7 +64,7 @@ export function ReportGenerator({ children }: ReportGeneratorProps) {
           </Button>
         </div>
       </div>
-      <div id="report-content" ref={reportRef} className="space-y-4 bg-background p-4 rounded-lg">
+      <div id="report-content" ref={reportRef} className="space-y-4 bg-background">
         {children}
       </div>
     </div>
