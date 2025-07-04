@@ -25,10 +25,16 @@ export type Material = {
   costPerUnit: number;
 };
 
+export type PurchaseItem = {
+  materialName: string;
+  quantity: number;
+  costPerUnit: number;
+};
+
 export type Purchase = {
   id: string;
   supplier: string;
-  itemCount: number;
+  items: PurchaseItem[];
   totalAmount: number;
   status: 'pending' | 'completed' | 'cancelled';
   date: string;

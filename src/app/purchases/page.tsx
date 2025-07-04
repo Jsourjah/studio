@@ -38,9 +38,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Database, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { Loader2, Database, MoreHorizontal, Trash2 } from 'lucide-react';
 import { purchases as initialPurchases } from '@/lib/data';
-import type { Purchase } from '@/lib/types';
+import type { Purchase, Material } from '@/lib/types';
 import { format } from 'date-fns';
 import { AddPurchaseForm } from '@/components/add-purchase-form';
 
@@ -56,35 +56,65 @@ const statusStyles: { [key: string]: string } = {
 export default function PurchasesPage() {
   const [purchases, setPurchases] = useLocalStorage<Purchase[]>('purchases', []);
   const [nextPurchaseId, setNextPurchaseId] = useLocalStorage<number>('nextPurchaseId', 100);
+  const [materials, setMaterials] = useLocalStorage<Material[]>('materials', []);
+  const [nextMaterialId, setNextMaterialId] = useLocalStorage<number>('nextMaterialId', 100);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
   const [purchaseToDelete, setPurchaseToDelete] = useState<string | null>(null);
-  const [purchaseToEdit, setPurchaseToEdit] = useState<Purchase | null>(null);
 
   useEffect(() => {
     setLoading(false);
   }, []);
 
   const safePurchases = purchases || [];
-  
-  const handleAddPurchase = (newPurchaseData: Omit<Purchase, 'id'>) => {
-    const newId = `P${String(nextPurchaseId).padStart(3, '0')}`;
+
+  const handleAddPurchase = (newPurchaseData: Omit<Purchase, 'id' | 'totalAmount'>) => {
+    // If purchase is completed, update the material stock
+    if (newPurchaseData.status === 'completed') {
+        const updatedMaterials: Material[] = materials ? [...materials] : [];
+        let currentMaterialId = nextMaterialId;
+
+        newPurchaseData.items.forEach(item => {
+            const materialIndex = updatedMaterials.findIndex(m => m.name.trim().toLowerCase() === item.materialName.trim().toLowerCase());
+
+            if (materialIndex !== -1) {
+                // Existing material: update quantity and cost
+                updatedMaterials[materialIndex].quantity += item.quantity;
+                updatedMaterials[materialIndex].costPerUnit = item.costPerUnit;
+            } else {
+                // New material: add to inventory
+                const newMaterial: Material = {
+                    id: `M${String(currentMaterialId).padStart(3, '0')}`,
+                    name: item.materialName.trim(),
+                    quantity: item.quantity,
+                    costPerUnit: item.costPerUnit,
+                };
+                updatedMaterials.push(newMaterial);
+                currentMaterialId++;
+            }
+        });
+        setMaterials(updatedMaterials);
+        setNextMaterialId(currentMaterialId);
+    }
+    
+    // Create the new purchase record
+    const totalAmount = newPurchaseData.items.reduce((sum, item) => sum + (item.quantity * item.costPerUnit), 0);
+    const newId = `PO${String(nextPurchaseId).padStart(3, '0')}`;
     const newPurchase: Purchase = {
-      id: newId,
-      ...newPurchaseData,
+        id: newId,
+        supplier: newPurchaseData.supplier,
+        items: newPurchaseData.items,
+        status: newPurchaseData.status,
+        date: newPurchaseData.date.toISOString(),
+        totalAmount,
     };
-    setPurchases(prevPurchases => [...(prevPurchases || []), newPurchase]);
+    
+    setPurchases(prev => [...(prev || []), newPurchase]);
     setNextPurchaseId(prevId => prevId + 1);
-  };
-  
-  const handleUpdatePurchase = (updatedPurchase: Purchase) => {
-    setPurchases(prev => 
-      (prev || []).map(p => p.id === updatedPurchase.id ? updatedPurchase : p)
-    );
-    setPurchaseToEdit(null);
   };
 
   const handleDeletePurchase = (id: string) => {
+    // Note: Deleting a purchase does not currently revert inventory changes.
     setPurchases(prev => (prev || []).filter(p => p.id !== id));
     setPurchaseToDelete(null);
   };
@@ -95,7 +125,7 @@ export default function PurchasesPage() {
     const seededPurchases = initialPurchases.map(purchase => {
       const newPurchase = {
         ...purchase,
-        id: `P${String(currentId).padStart(3, '0')}`,
+        id: `PO${String(currentId).padStart(3, '0')}`,
       };
       currentId++;
       return newPurchase;
@@ -127,9 +157,6 @@ export default function PurchasesPage() {
           <div className="flex items-center space-x-2">
             <AddPurchaseForm 
               onAddPurchase={handleAddPurchase}
-              purchaseToEdit={purchaseToEdit}
-              onUpdatePurchase={handleUpdatePurchase}
-              setPurchaseToEdit={setPurchaseToEdit}
             />
           </div>
         </div>
@@ -169,8 +196,8 @@ export default function PurchasesPage() {
                     <TableHead>Purchase ID</TableHead>
                     <TableHead>Supplier</TableHead>
                     <TableHead>Date</TableHead>
+                    <TableHead>Items</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Items</TableHead>
                     <TableHead className="text-right">Total Amount</TableHead>
                     <TableHead>
                       <span className="sr-only">Actions</span>
@@ -178,14 +205,23 @@ export default function PurchasesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedPurchases.map((purchase, index) => (
-                    <TableRow key={purchase.id || index}>
-                      <TableCell className="font-medium">{purchase.id || ''}</TableCell>
-                      <TableCell>{purchase.supplier || 'N/A'}</TableCell>
+                  {sortedPurchases.map((purchase) => (
+                    <TableRow key={purchase.id}>
+                      <TableCell className="font-medium">{purchase.id}</TableCell>
+                      <TableCell>{purchase.supplier}</TableCell>
                       <TableCell>
                         {purchase.date && !isNaN(new Date(purchase.date).getTime())
                           ? format(new Date(purchase.date), 'MM/dd/yyyy')
                           : 'N/A'}
+                      </TableCell>
+                       <TableCell>
+                          <div className="flex flex-wrap gap-1 max-w-xs">
+                              {(purchase.items || []).map((item, itemIndex) => (
+                                  <Badge key={itemIndex} variant="secondary" className="font-normal">
+                                      {item.quantity}x {item.materialName}
+                                  </Badge>
+                              ))}
+                          </div>
                       </TableCell>
                       <TableCell>
                         <Badge
@@ -195,9 +231,6 @@ export default function PurchasesPage() {
                           {(purchase.status || 'unknown').charAt(0).toUpperCase() +
                             (purchase.status || 'unknown').slice(1)}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {purchase.itemCount || 0}
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         Rs.{(purchase.totalAmount || 0).toFixed(2)}
@@ -212,11 +245,6 @@ export default function PurchasesPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => setPurchaseToEdit(purchase)}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
                             <DropdownMenuItem
                               className="text-red-600 focus:text-red-600 focus:bg-red-50"
                               onClick={() => setPurchaseToDelete(purchase.id)}
@@ -244,7 +272,7 @@ export default function PurchasesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this purchase record.
+              This action cannot be undone. This will permanently delete this purchase record. Deleting a purchase will not revert inventory changes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -38,11 +38,35 @@ export const initialProductBundles: ProductBundle[] = [
 
 
 export const purchases: Omit<Purchase, 'id'>[] = [
-  { supplier: 'Steel Supply Co.', itemCount: 2, totalAmount: 5000.0, status: 'completed', date: formatISO(subMonths(now, 1)) },
-  { supplier: 'Builder\'s World', itemCount: 3, totalAmount: 1500.0, status: 'pending', date: formatISO(subMonths(now, 0)) },
-  { supplier: 'Industrial Hardware', itemCount: 5, totalAmount: 750.0, status: 'completed', date: formatISO(subMonths(now, 2)) },
-  { supplier: 'Steel Supply Co.', itemCount: 1, totalAmount: 2500.0, status: 'cancelled', date: formatISO(subMonths(now, 3)) },
-  { supplier: 'Plumbing Pros', itemCount: 4, totalAmount: 3200.0, status: 'completed', date: formatISO(subMonths(now, 4)) },
+  { 
+    supplier: 'Steel Supply Co.', 
+    items: [
+      { materialName: 'Steel Beams', quantity: 50, costPerUnit: 50.0 },
+      { materialName: 'Plywood Sheets', quantity: 100, costPerUnit: 12.0 }
+    ],
+    totalAmount: 3700.0, 
+    status: 'completed', 
+    date: formatISO(subMonths(now, 1)) 
+  },
+  { 
+    supplier: 'Builder\'s World', 
+    items: [
+      { materialName: 'Concrete Mix', quantity: 100, costPerUnit: 6.0 },
+      { materialName: 'PVC Pipes', quantity: 50, costPerUnit: 8.0 }
+    ],
+    totalAmount: 1000.0, 
+    status: 'pending', 
+    date: formatISO(subMonths(now, 0)) 
+  },
+  { 
+    supplier: 'Industrial Hardware', 
+    items: [
+      { materialName: 'Copper Wiring (ft)', quantity: 500, costPerUnit: 0.80 }
+    ],
+    totalAmount: 400.0, 
+    status: 'completed', 
+    date: formatISO(subMonths(now, 2)) 
+  },
 ];
 
 export const monthlySummary = [

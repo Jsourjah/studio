@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -37,35 +38,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Database, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
+import { Loader2, Database, MoreHorizontal, Edit, Trash2, ShoppingCart } from 'lucide-react';
 import { initialMaterials } from '@/lib/data';
 import type { Material } from '@/lib/types';
 import { AddMaterialForm } from '@/components/add-material-form';
 
 export default function MaterialsPage() {
   const [materials, setMaterials] = useLocalStorage<Material[]>('materials', []);
-  const [nextMaterialId, setNextMaterialId] = useLocalStorage<number>('nextMaterialId', 100);
   const [loading, setLoading] = useState(true);
-  const [isSeeding, setIsSeeding] = useState(false);
   const [materialToDelete, setMaterialToDelete] = useState<string | null>(null);
   const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
 
   useEffect(() => {
+    if (materials === null) {
+      setMaterials(initialMaterials);
+    }
     setLoading(false);
   }, []);
-
+  
   const safeMaterials = materials || [];
 
-  const handleAddMaterial = (newMaterialData: Omit<Material, 'id'>) => {
-    const newId = `M${String(nextMaterialId).padStart(3, '0')}`;
-    const newMaterial: Material = {
-      id: newId,
-      ...newMaterialData,
-    };
-    setMaterials(prevMaterials => [...(prevMaterials || []), newMaterial]);
-    setNextMaterialId(prevId => prevId + 1);
-  };
-  
   const handleUpdateMaterial = (updatedMaterial: Material) => {
     setMaterials(prev => 
       (prev || []).map(m => m.id === updatedMaterial.id ? updatedMaterial : m)
@@ -76,22 +68,6 @@ export default function MaterialsPage() {
   const handleDeleteMaterial = (id: string) => {
     setMaterials(prev => (prev || []).filter(m => m.id !== id));
     setMaterialToDelete(null);
-  };
-  
-  const seedData = () => {
-    setIsSeeding(true);
-    let currentId = nextMaterialId;
-    const seededMaterials = initialMaterials.map((material) => {
-      const newMaterial = {
-        ...material,
-        id: `M${String(currentId).padStart(3, '0')}`,
-      };
-      currentId++;
-      return newMaterial;
-    });
-    setMaterials(seededMaterials);
-    setNextMaterialId(currentId);
-    setIsSeeding(false);
   };
 
   if (loading) {
@@ -106,15 +82,13 @@ export default function MaterialsPage() {
     <>
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Materials</h2>
-          <div className="flex items-center space-x-2">
-            <AddMaterialForm 
-              onAddMaterial={handleAddMaterial} 
+          <h2 className="text-3xl font-bold tracking-tight">Materials Inventory</h2>
+           <AddMaterialForm 
+              onAddMaterial={() => {}} // This is unused now
               onUpdateMaterial={handleUpdateMaterial}
               materialToEdit={materialToEdit}
               setMaterialToEdit={setMaterialToEdit}
             />
-          </div>
         </div>
 
         {safeMaterials.length === 0 ? (
@@ -122,19 +96,16 @@ export default function MaterialsPage() {
             <CardHeader>
               <CardTitle>No Materials Found</CardTitle>
               <CardDescription>
-                Your materials list is empty. You can add a new one or load
-                sample data to get started.
+                Your materials inventory is empty. Add materials by creating a new purchase on the Purchases page.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={seedData} disabled={isSeeding}>
-                {isSeeding ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Database className="mr-2 h-4 w-4" />
-                )}
-                Load Sample Materials
-              </Button>
+              <Link href="/purchases">
+                <Button>
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Go to Purchases
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         ) : (
@@ -142,7 +113,7 @@ export default function MaterialsPage() {
             <CardHeader>
               <CardTitle>Materials Inventory</CardTitle>
               <CardDescription>
-                Manage your raw materials and stock levels.
+                Manage your raw materials and stock levels. New materials are added via the Purchases page.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -160,11 +131,11 @@ export default function MaterialsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {safeMaterials.filter(Boolean).map((material, index) => (
-                    <TableRow key={material.id || index}>
-                      <TableCell className="font-medium truncate max-w-[100px]">{material.id || ''}</TableCell>
-                      <TableCell>{material.name || 'N/A'}</TableCell>
-                      <TableCell>{material.quantity || 0}</TableCell>
+                  {safeMaterials.filter(Boolean).map((material) => (
+                    <TableRow key={material.id}>
+                      <TableCell className="font-medium truncate max-w-[100px]">{material.id}</TableCell>
+                      <TableCell>{material.name}</TableCell>
+                      <TableCell>{material.quantity}</TableCell>
                       <TableCell className="text-right">
                         Rs.{(material.costPerUnit || 0).toFixed(2)}
                       </TableCell>
