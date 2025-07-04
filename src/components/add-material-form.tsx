@@ -54,14 +54,13 @@ export function AddMaterialForm({ onAddMaterial, onUpdateMaterial, materialToEdi
     },
   });
 
+  // This effect synchronizes the dialog's open state and form data when editing
   useEffect(() => {
     if (materialToEdit) {
       form.reset(materialToEdit);
       setOpen(true);
-    } else {
-      form.reset({ name: '', quantity: 0, costPerUnit: 0 });
     }
-  }, [materialToEdit, form.reset]);
+  }, [materialToEdit]);
 
   function onSubmit(values: z.infer<typeof materialSchema>) {
     if (isEditMode && materialToEdit) {
@@ -69,13 +68,16 @@ export function AddMaterialForm({ onAddMaterial, onUpdateMaterial, materialToEdi
     } else {
       onAddMaterial(values);
     }
-    setOpen(false);
+    setOpen(false); // Close the dialog on successful submission
   }
 
+  // This function handles closing the dialog and resetting the parent component's state
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) {
+      // This is crucial to prevent re-opening the dialog unintentionally
       setMaterialToEdit(null);
+      form.reset({ name: '', quantity: 0, costPerUnit: 0 });
     }
   };
 
@@ -83,7 +85,9 @@ export function AddMaterialForm({ onAddMaterial, onUpdateMaterial, materialToEdi
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {!isEditMode && (
         <DialogTrigger asChild>
-          <Button onClick={() => setOpen(true)}>
+          {/* Note: This button does not currently add materials as per the new workflow. */}
+          {/* It is kept for UI consistency but could be removed. */}
+          <Button disabled>
             <PlusCircle className="mr-2 h-4 w-4" /> Add New Material
           </Button>
         </DialogTrigger>
@@ -94,7 +98,7 @@ export function AddMaterialForm({ onAddMaterial, onUpdateMaterial, materialToEdi
           <DialogDescription>
             {isEditMode 
               ? 'Update the details for this material.' 
-              : 'Fill in the details below to add a new raw material.'
+              : 'New materials should be added via the Purchases page.'
             }
           </DialogDescription>
         </DialogHeader>
@@ -143,8 +147,8 @@ export function AddMaterialForm({ onAddMaterial, onUpdateMaterial, materialToEdi
               />
             </div>
             <DialogFooter>
-              <Button type="submit">
-                {isEditMode ? 'Save Changes' : 'Add Material'}
+              <Button type="submit" disabled={!isEditMode}>
+                {isEditMode ? 'Save Changes' : 'Add via Purchases'}
               </Button>
             </DialogFooter>
           </form>

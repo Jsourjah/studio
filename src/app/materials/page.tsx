@@ -50,9 +50,8 @@ export default function MaterialsPage() {
   const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
 
   useEffect(() => {
-    if (materials === null) {
-      setMaterials(initialMaterials);
-    }
+    // We just need to switch off loading state once, after the initial mount.
+    // The useLocalStorage hook will handle hydrating the data from there.
     setLoading(false);
   }, []);
   
@@ -78,20 +77,23 @@ export default function MaterialsPage() {
     );
   }
 
+  // Filter out any invalid material objects to prevent render crashes
+  const validMaterials = safeMaterials.filter(m => m && m.id && m.name);
+
   return (
     <>
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Materials Inventory</h2>
            <AddMaterialForm 
-              onAddMaterial={() => {}} // This is unused now
+              onAddMaterial={() => {}} // This is unused now, new materials come from purchases
               onUpdateMaterial={handleUpdateMaterial}
               materialToEdit={materialToEdit}
               setMaterialToEdit={setMaterialToEdit}
             />
         </div>
 
-        {safeMaterials.length === 0 ? (
+        {validMaterials.length === 0 ? (
            <Card className="mt-6">
             <CardHeader>
               <CardTitle>No Materials Found</CardTitle>
@@ -131,7 +133,7 @@ export default function MaterialsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {safeMaterials.filter(Boolean).map((material) => (
+                  {validMaterials.map((material) => (
                     <TableRow key={material.id}>
                       <TableCell className="font-medium truncate max-w-[100px]">{material.id}</TableCell>
                       <TableCell>{material.name}</TableCell>
