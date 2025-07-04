@@ -48,27 +48,17 @@ npm run dev
 
 This will start the application, and you can view it in your browser at `http://localhost:9002`.
 
-### 5. Run the Production Server (for daily local use)
+### 5. Installing as a Desktop App (PWA)
 
-If you want to run a more stable, optimized version of the app on your computer for daily use (without making code changes), you should use the production server.
+This application can be installed on your desktop for a more app-like experience, with its own icon and window. This feature is known as a Progressive Web App (PWA).
 
-First, build the application:
-```bash
-npm run build
-```
-Then, start the production server:
-```bash
-npm run start
-```
-This will also run the app at `http://localhost:9002`, but in a more performant mode. You only need to run `npm run build` once after you've made code changes.
+To install the app:
 
-### 6. Running Genkit for AI Features (Optional)
+1.  Open the application in a modern browser like Google Chrome or Microsoft Edge.
+2.  Look for an "Install" icon in the address bar (usually on the right side). It might look like a computer screen with a downward arrow.
+3.  Click the icon and follow the on-screen prompts to install the application.
 
-If you want to use the AI-powered features (like report anomaly detection), you'll also need to run the Genkit development server in a separate terminal:
-
-```bash
-npm run genkit:dev
-```
+Once installed, you can launch it from your desktop or start menu just like any other application.
 
 ## Deploying to Firebase (Recommended for Business Use)
 
