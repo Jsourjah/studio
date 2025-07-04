@@ -34,13 +34,15 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert business data analyst. Your task is to analyze monthly report data and detect any significant anomalies compared to past trends.
 
   Current Report Data:
-  {{currentReportData}}
+  {{{currentReportData}}}
 
   Past Report Data:
-  {{pastReportData}}
+  {{{pastReportData}}}
 
   Determine if there are any large discrepancies between the current report and past reports. If there is, explain the anomaly and provide possible reasons for the change.  Be specific, and describe which metrics had the largest changes.  If there is no anomaly, state that clearly.
   Set the hasAnomaly field to true if there are anomalies and false otherwise.
+
+  Provide your response in a valid JSON object that conforms to the specified output schema. Do not include any text outside of the JSON object.
 `,
 });
 
@@ -52,6 +54,9 @@ const reportAnomalyDetectionFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('The AI model failed to generate a valid analysis. Please try again.');
+    }
+    return output;
   }
 );
