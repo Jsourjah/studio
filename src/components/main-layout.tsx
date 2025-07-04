@@ -19,15 +19,13 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         <SidebarHeader>
           <div className="flex items-center gap-2" data-testid="sidebar-header">
             <Image
+              className="p-8 w-auto md:block"
               src="/images/logo.png"
-              width={32}
-              height={32}
+              width={143}
+              height={243}
               alt="Business Manager Logo"
-              className="rounded-lg"
             />
-            <h1 className="text-lg font-semibold text-sidebar-foreground">
-              OBM
-            </h1>
+            
           </div>
         </SidebarHeader>
         <SidebarContent>
