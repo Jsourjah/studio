@@ -11,7 +11,7 @@ type BusinessReportPdfProps = {
     totalAmount: number;
   };
   purchaseSummary: { name: string; totalQuantity: number; totalAmount: number }[];
-  materialUsage: { name: string; invoiceCount: number }[];
+  materialUsage: { name: string; invoiceCount: number; totalQuantity: number }[];
 };
 
 const SectionHeader = ({ title }: { title: string }) => (
@@ -107,11 +107,16 @@ export function BusinessReportPdf({
       <SectionHeader title="Material Usage In Invoices" />
       <div className="px-4 space-y-2">
         {materialUsage.map((item) => (
-          <ReportRow
+          <div
             key={item.name}
-            label={item.name}
-            value={`${item.invoiceCount} invoices`}
-          />
+            className="flex justify-between items-center py-1 border-b border-gray-300"
+          >
+            <p className="text-gray-700">{item.name}</p>
+            <div className="font-semibold text-black text-right">
+              <div>{`Invoices: ${item.invoiceCount}`}</div>
+              <div>{`Total Used: ${item.totalQuantity}`}</div>
+            </div>
+          </div>
         ))}
       </div>
     </div>

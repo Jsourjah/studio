@@ -113,33 +113,53 @@ export default function ReportsPage() {
   const unpaidAmount = unpaidInvoices.reduce((sum, i) => sum + i.amount, 0);
 
   // Data for Material Usage Table
-  const materialUsage = safeInvoices.reduce((acc, invoice) => {
-    const materialsInThisInvoice = new Set<string>();
+  const materialTotalUsage = safeInvoices.reduce((acc, invoice) => {
     if (invoice && Array.isArray(invoice.items)) {
-        invoice.items.forEach(item => {
-            if (item.materialId) {
-                materialsInThisInvoice.add(item.materialId);
-            } else if (item.productBundleId) {
-                const bundle = safeProductBundles.find(b => b.id === item.productBundleId);
-                if (bundle && Array.isArray(bundle.items)) {
-                    bundle.items.forEach(bundleItem => {
-                        materialsInThisInvoice.add(bundleItem.materialId);
-                    });
-                }
-            }
-        });
+      invoice.items.forEach(item => {
+        if (item.materialId) {
+          acc[item.materialId] = (acc[item.materialId] || 0) + item.quantity;
+        } else if (item.productBundleId) {
+          const bundle = safeProductBundles.find(b => b.id === item.productBundleId);
+          if (bundle && Array.isArray(bundle.items)) {
+            bundle.items.forEach(bundleItem => {
+              const totalQuantity = bundleItem.quantity * item.quantity;
+              acc[bundleItem.materialId] = (acc[bundleItem.materialId] || 0) + totalQuantity;
+            });
+          }
+        }
+      });
     }
-    materialsInThisInvoice.forEach(materialId => {
-        acc[materialId] = (acc[materialId] || 0) + 1;
-    });
     return acc;
   }, {} as { [materialId: string]: number });
 
-  const materialUsageReportData = Object.entries(materialUsage).map(([materialId, invoiceCount]) => {
+  const materialInvoiceCounts = safeInvoices.reduce((acc, invoice) => {
+      const materialsInThisInvoice = new Set<string>();
+      if (invoice && Array.isArray(invoice.items)) {
+          invoice.items.forEach(item => {
+              if (item.materialId) {
+                  materialsInThisInvoice.add(item.materialId);
+              } else if (item.productBundleId) {
+                  const bundle = safeProductBundles.find(b => b.id === item.productBundleId);
+                  if (bundle && Array.isArray(bundle.items)) {
+                      bundle.items.forEach(bundleItem => {
+                          materialsInThisInvoice.add(bundleItem.materialId);
+                      });
+                  }
+              }
+          });
+      }
+      materialsInThisInvoice.forEach(materialId => {
+          acc[materialId] = (acc[materialId] || 0) + 1;
+      });
+      return acc;
+    }, {} as { [materialId: string]: number });
+
+  const materialUsageReportData = Object.keys(materialInvoiceCounts).map(materialId => {
     const material = safeMaterials.find(m => m.id === materialId);
     return {
-        name: material ? material.name : 'Unknown Material',
-        invoiceCount: invoiceCount
+      name: material ? material.name : 'Unknown Material',
+      invoiceCount: materialInvoiceCounts[materialId] || 0,
+      totalQuantity: materialTotalUsage[materialId] || 0,
     };
   }).sort((a, b) => b.invoiceCount - a.invoiceCount);
 
@@ -290,20 +310,22 @@ export default function ReportsPage() {
 
        <div>
             <h3 className="text-2xl font-semibold tracking-tight mt-6">Material Usage in Invoices</h3>
-            <p className="text-sm text-muted-foreground mb-4">How many invoices each material appears in.</p>
+            <p className="text-sm text-muted-foreground mb-4">How many invoices each material appears in and the total quantity used.</p>
             <div className="mt-4 rounded-lg border">
             <Table>
                 <TableHeader>
                     <TableRow>
                         <TableHead>Material Name</TableHead>
-                        <TableHead className="text-right">Used in # of Invoices</TableHead>
+                        <TableHead className="text-center"># of Invoices</TableHead>
+                        <TableHead className="text-right">Total Quantity Used</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {materialUsageReportData.map((item) => (
                         <TableRow key={item.name}>
                             <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell className="text-right">{item.invoiceCount}</TableCell>
+                            <TableCell className="text-center">{item.invoiceCount}</TableCell>
+                            <TableCell className="text-right">{item.totalQuantity}</TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
