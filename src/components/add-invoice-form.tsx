@@ -43,6 +43,7 @@ import type { Invoice, Material, InvoiceItem, ProductBundle } from '@/lib/types'
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { InvoicePdf } from '@/components/invoice-pdf';
+import { getCostOfInvoiceItem } from '@/lib/calculations';
 
 const invoiceItemSchema = z.object({
   description: z.string().min(1, 'Description is required.'),
@@ -184,32 +185,6 @@ export function AddInvoiceForm({ onAddInvoice, materials, productBundles }: AddI
       productBundleId: bundle.id,
     });
   };
-  
-  const getItemCost = (item: InvoiceItem) => {
-    // If it's a product bundle, calculate sum of its material costs
-    if (item.productBundleId) {
-      const bundle = productBundles.find(b => b.id === item.productBundleId);
-      if (bundle) {
-        // Find the cost of each material in the bundle and sum it up
-        const totalCost = bundle.items.reduce((acc, bundleItem) => {
-          const material = materials.find(m => m.id === bundleItem.materialId);
-          // The cost for this part of the bundle is material cost * quantity in bundle
-          const itemCost = material ? material.costPerUnit * bundleItem.quantity : 0;
-          return acc + itemCost;
-        }, 0);
-        return totalCost;
-      }
-    } 
-    
-    // If it's a single material, find its cost per unit
-    else if (item.materialId) {
-      const material = materials.find(m => m.id === item.materialId);
-      return material?.costPerUnit || 0;
-    }
-
-    // If it's a custom item with no ID, it has no cost
-    return 0;
-  };
 
   return (
     <>
@@ -350,7 +325,7 @@ export function AddInvoiceForm({ onAddInvoice, materials, productBundles }: AddI
                     <FormItem className="col-span-6 md:col-span-2">
                       <FormLabel className={cn(index !== 0 && "sr-only")}>Cost</FormLabel>
                       <div className="flex h-10 w-full items-center rounded-md border border-input bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-                        {`Rs. ${getItemCost(watchedItems[index] as InvoiceItem).toFixed(2)}`}
+                        {`Rs. ${getCostOfInvoiceItem(watchedItems[index] as InvoiceItem, materials, productBundles).toFixed(2)}`}
                       </div>
                     </FormItem>
                        <FormField

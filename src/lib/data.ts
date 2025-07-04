@@ -15,23 +15,23 @@ export const invoices: Omit<Invoice, 'id'>[] = [
 ];
 
 export const initialMaterials: Material[] = [
-  { id: 'laminating-sheet', name: 'Laminating Sheet', quantity: 500, costPerUnit: 18.00 },
-  { id: 'a4-paper', name: 'A4 Paper', quantity: 1000, costPerUnit: 2.70 },
-  { id: 'steel-beams', name: 'Steel Beams', quantity: 100, costPerUnit: 50.0 },
-  { id: 'concrete-mix', name: 'Concrete Mix', quantity: 500, costPerUnit: 5.5 },
-  { id: 'plywood-sheets', name: 'Plywood Sheets', quantity: 200, costPerUnit: 15.0 },
-  { id: 'copper-wiring', name: 'Copper Wiring (ft)', quantity: 1000, costPerUnit: 0.75 },
-  { id: 'pvc-pipes', name: 'PVC Pipes', quantity: 300, costPerUnit: 8.25 },
+  { id: 'M001', name: 'Laminating Sheet', quantity: 500, costPerUnit: 18.00 },
+  { id: 'M002', name: 'A4 Paper', quantity: 1000, costPerUnit: 2.70 },
+  { id: 'M003', name: 'Steel Beams', quantity: 100, costPerUnit: 50.0 },
+  { id: 'M004', name: 'Concrete Mix', quantity: 500, costPerUnit: 5.5 },
+  { id: 'M005', name: 'Plywood Sheets', quantity: 200, costPerUnit: 15.0 },
+  { id: 'M006', name: 'Copper Wiring (ft)', quantity: 1000, costPerUnit: 0.75 },
+  { id: 'M007', name: 'PVC Pipes', quantity: 300, costPerUnit: 8.25 },
 ];
 
 export const initialProductBundles: ProductBundle[] = [
   { 
-    id: 'lamination-service',
+    id: 'P001',
     name: 'Lamination Service',
     price: 30.00,
     items: [
-      { materialId: 'laminating-sheet', quantity: 1 },
-      { materialId: 'a4-paper', quantity: 1 }
+      { materialId: 'M001', quantity: 1 },
+      { materialId: 'M002', quantity: 1 }
     ] 
   }
 ];

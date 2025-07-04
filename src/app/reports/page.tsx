@@ -16,6 +16,7 @@ import { initialProductBundles } from '@/lib/data';
 import { isThisMonth } from 'date-fns';
 import { ReportGenerator } from '@/components/report-generator';
 import { Loader2 } from 'lucide-react';
+import { getCostOfInvoice } from '@/lib/calculations';
 
 export default function ReportsPage() {
   const [invoices] = useLocalStorage<Invoice[]>('invoices', []);
@@ -62,49 +63,20 @@ export default function ReportsPage() {
     .filter((purchase) => purchase && purchase.status === 'completed')
     .reduce((sum, purchase) => sum + (purchase.totalAmount || 0), 0);
 
-  const getCostOfInvoice = (invoice: Invoice): number => {
-    if (!invoice || !Array.isArray(invoice.items)) return 0;
-
-    return invoice.items.reduce((invoiceCost, item) => {
-      let itemCostBasis = 0;
-
-      if (item.productBundleId) {
-        const bundle = safeProductBundles.find(
-          (b) => b.id === item.productBundleId
-        );
-        if (bundle && Array.isArray(bundle.items)) {
-          itemCostBasis = bundle.items.reduce((bundleCost, bundleItem) => {
-            const material = safeMaterials.find(
-              (m) => m.id === bundleItem.materialId
-            );
-            return (
-              bundleCost + (material ? material.costPerUnit * bundleItem.quantity : 0)
-            );
-          }, 0);
-        }
-      } else if (item.materialId) {
-        const material = safeMaterials.find((m) => m.id === item.materialId);
-        itemCostBasis = material ? material.costPerUnit : 0;
-      }
-
-      return invoiceCost + itemCostBasis * item.quantity;
-    }, 0);
-  };
-
   const totalCogs = safeInvoices.reduce(
-    (sum, invoice) => sum + getCostOfInvoice(invoice),
+    (sum, invoice) => sum + getCostOfInvoice(invoice, safeMaterials, safeProductBundles),
     0
   );
 
   const cogsForPaidInvoices = safeInvoices
     .filter((i) => i.status === 'paid')
-    .reduce((sum, invoice) => sum + getCostOfInvoice(invoice), 0);
+    .reduce((sum, invoice) => sum + getCostOfInvoice(invoice, safeMaterials, safeProductBundles), 0);
 
   const grossProfit = collectedRevenue - cogsForPaidInvoices;
 
   const cogsThisMonth = safeInvoices
     .filter((i) => i.date && !isNaN(new Date(i.date).getTime()) && isThisMonth(new Date(i.date)))
-    .reduce((sum, invoice) => sum + getCostOfInvoice(invoice), 0);
+    .reduce((sum, invoice) => sum + getCostOfInvoice(invoice, safeMaterials, safeProductBundles), 0);
 
   // Data for Invoice Summary Table
   const paidInvoices = safeInvoices.filter(i => i.status === 'paid');
