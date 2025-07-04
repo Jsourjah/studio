@@ -42,8 +42,9 @@ export function DashboardChart({ data, chartConfig, totalLabel = "Total", valueF
                     data={data}
                     dataKey="value"
                     nameKey="name"
-                    innerRadius="60%"
+                    innerRadius="50%"
                     strokeWidth={5}
+                    stroke="hsl(var(--card))"
                 >
                     <Label
                         content={({ viewBox }) => {
