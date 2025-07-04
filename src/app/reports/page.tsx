@@ -173,6 +173,16 @@ export default function ReportsPage() {
   const purchaseReportData = Object.values(purchaseSummary)
     .sort((a, b) => b.totalAmount - a.totalAmount);
 
+  const financialSummaryData = [
+    { metric: 'Total Revenue', value: totalRevenue, description: 'From all invoices' },
+    { metric: 'Collected Revenue', value: collectedRevenue, description: 'From paid invoices' },
+    { metric: 'Outstanding Revenue', value: outstandingRevenue, description: 'Unpaid & Overdue' },
+    { metric: 'Gross Profit', value: grossProfit, description: 'Collected Revenue - COGS' },
+    { metric: 'Cost of Goods Sold (Total)', value: totalCogs, description: 'Cost of materials in all invoices' },
+    { metric: 'Cost of Goods Sold (This Month)', value: cogsThisMonth, description: 'Cost of materials used this month' },
+    { metric: 'Completed Purchases', value: totalPurchaseAmount, description: 'Total spend on materials' },
+    { metric: 'Inventory Value', value: totalInventoryValue, description: 'Total cost of materials in stock' },
+  ];
 
   if (loading) {
     return (
@@ -184,93 +194,34 @@ export default function ReportsPage() {
 
   return (
     <ReportGenerator>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Total Revenue</CardTitle>
-            <CardDescription>From all invoices</CardDescription>
+            <CardTitle>Financial Summary</CardTitle>
+            <CardDescription>A top-level overview of your business finances.</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold">
-              Rs.{totalRevenue.toLocaleString('en-US')}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Collected Revenue</CardTitle>
-            <CardDescription>From paid invoices</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              Rs.{collectedRevenue.toLocaleString('en-US')}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Gross Profit</CardTitle>
-            <CardDescription>Collected Revenue - COGS</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              Rs.{grossProfit.toLocaleString('en-US')}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Outstanding Revenue</CardTitle>
-            <CardDescription>Unpaid & Overdue</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              Rs.{outstandingRevenue.toLocaleString('en-US')}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Cost of Goods Sold (Total)</CardTitle>
-            <CardDescription>Cost of materials in all invoices</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              Rs.{totalCogs.toLocaleString('en-US')}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Materials Used (This Month)</CardTitle>
-            <CardDescription>Cost of materials used this month</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              Rs.{cogsThisMonth.toLocaleString('en-US')}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Completed Purchases</CardTitle>
-            <CardDescription>Total spend on materials</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              Rs.{totalPurchaseAmount.toLocaleString('en-US')}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Inventory Value</CardTitle>
-            <CardDescription>Total cost of materials in stock</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              Rs.{totalInventoryValue.toLocaleString('en-US')}
-            </p>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Metric</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {financialSummaryData.map((item) => (
+                  <TableRow key={item.metric}>
+                    <TableCell>
+                      <p className="font-medium">{item.metric}</p>
+                      <p className="text-sm text-muted-foreground">{item.description}</p>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      Rs.{item.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
