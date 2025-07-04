@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -15,12 +16,17 @@ import {
 type DashboardChartProps = {
     data: any[];
     chartConfig: ChartConfig;
+    totalLabel?: string;
+    valueFormatter?: (value: number) => string;
 };
 
-export function DashboardChart({ data, chartConfig }: DashboardChartProps) {
+export function DashboardChart({ data, chartConfig, totalLabel = "Total", valueFormatter }: DashboardChartProps) {
     const totalValue = React.useMemo(() => {
-        return data.reduce((acc, curr) => acc + curr.value, 0);
+        return data.reduce((acc, curr) => acc + (curr.value || 0), 0);
     }, [data]);
+    
+    const defaultFormatter = (value: number) => `Rs.${value.toLocaleString()}`;
+    const displayValue = valueFormatter ? valueFormatter(totalValue) : defaultFormatter(totalValue);
 
     return (
         <ChartContainer
@@ -54,14 +60,14 @@ export function DashboardChart({ data, chartConfig }: DashboardChartProps) {
                                             y={viewBox.cy}
                                             className="fill-foreground text-3xl font-bold"
                                         >
-                                            {`Rs.${(totalValue / 1000).toFixed(1)}k`}
+                                            {displayValue}
                                         </tspan>
                                         <tspan
                                             x={viewBox.cx}
                                             y={(viewBox.cy || 0) + 24}
                                             className="fill-muted-foreground"
                                         >
-                                            Total
+                                            {totalLabel}
                                         </tspan>
                                     </text>
                                 )

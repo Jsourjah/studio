@@ -28,13 +28,14 @@ import {
 } from 'lucide-react';
 
 import { monthlySummary } from '@/lib/data';
-import type { Invoice } from '@/lib/types';
+import type { Invoice, Material } from '@/lib/types';
 import { format } from 'date-fns';
 import { DashboardChart } from '@/components/dashboard-chart';
 import type { ChartConfig } from '@/components/ui/chart';
 
 export default function Dashboard() {
   const [invoices] = useLocalStorage<Invoice[]>('invoices', []);
+  const [materials] = useLocalStorage<Material[]>('materials', []);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,6 +43,7 @@ export default function Dashboard() {
   }, []);
 
   const safeInvoices = invoices || [];
+  const safeMaterials = materials || [];
 
   const unpaidInvoices = [...safeInvoices]
     .filter((invoice) => invoice && (invoice.status === 'unpaid' || invoice.status === 'overdue'))
@@ -63,21 +65,40 @@ export default function Dashboard() {
   const totalMonthlyRevenue = monthlySummary.reduce((acc, curr) => acc + curr.revenue, 0);
   const totalMonthlyPurchases = monthlySummary.reduce((acc, curr) => acc + curr.purchases, 0);
 
-  const pieData = [
-    { name: 'Revenue', value: totalMonthlyRevenue, fill: 'var(--color-Revenue)' },
-    { name: 'Purchases', value: totalMonthlyPurchases, fill: 'var(--color-Purchases)' },
+  // Inventory Chart
+  const inventoryData = safeMaterials
+    .map((material) => ({
+      name: material.name,
+      value: (material.quantity || 0) * (material.costPerUnit || 0),
+    }))
+    .filter((item) => item.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  const topN = 4;
+  const chartDataItems = inventoryData.slice(0, topN);
+  const otherValue = inventoryData
+    .slice(topN)
+    .reduce((sum, item) => sum + item.value, 0);
+
+  if (otherValue > 0) {
+    chartDataItems.push({ name: 'Other', value: otherValue });
+  }
+
+  const chartColors = [
+    'hsl(var(--chart-1))',
+    'hsl(var(--chart-2))',
+    'hsl(var(--chart-3))',
+    'hsl(var(--chart-4))',
+    'hsl(var(--chart-5))',
   ];
 
-  const chartConfig = {
-    Revenue: {
-      label: 'Revenue',
-      color: 'hsl(var(--chart-1))',
-    },
-    Purchases: {
-      label: 'Purchases',
-      color: 'hsl(var(--chart-2))',
-    },
-  } satisfies ChartConfig;
+  const inventoryChartConfig = chartDataItems.reduce((acc, item, index) => {
+    acc[item.name] = {
+      label: item.name,
+      color: chartColors[index % chartColors.length],
+    };
+    return acc;
+  }, {} as ChartConfig);
 
   const statusStyles: { [key: string]: string } = {
     paid:
@@ -170,13 +191,18 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle>Overview</CardTitle>
+            <CardTitle>Inventory Overview</CardTitle>
             <CardDescription>
-                A summary of revenue vs. purchases.
+                A breakdown of your current inventory by value.
             </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <DashboardChart data={pieData} chartConfig={chartConfig} />
+            <DashboardChart 
+              data={chartDataItems} 
+              chartConfig={inventoryChartConfig}
+              totalLabel="Total Inventory"
+              valueFormatter={(value) => `Rs.${value.toLocaleString()}`}
+            />
           </CardContent>
         </Card>
         <Card className="lg:col-span-3">
