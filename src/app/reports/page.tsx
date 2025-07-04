@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -177,6 +176,20 @@ export default function ReportsPage() {
     { metric: 'Inventory Value', value: totalInventoryValue, description: 'Total cost of materials in stock' },
   ];
 
+  const reportData = {
+    financialSummary: financialSummaryData,
+    invoiceSummary: {
+        paidCount: paidInvoices.length,
+        paidAmount,
+        unpaidCount: unpaidInvoices.length,
+        unpaidAmount,
+        totalCount: safeInvoices.length,
+        totalAmount: totalRevenue,
+    },
+    purchaseSummary: purchaseReportData,
+    materialUsage: materialUsageReportData,
+  };
+
   if (loading) {
     return (
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6 flex items-center justify-center">
@@ -186,7 +199,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <ReportGenerator>
+    <ReportGenerator reportData={reportData}>
       <div className="space-y-8">
         <div>
           <h3 className="text-2xl font-semibold tracking-tight">Financial Summary</h3>
