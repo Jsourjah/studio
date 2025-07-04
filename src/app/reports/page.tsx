@@ -62,7 +62,7 @@ export default function ReportsPage() {
     .reduce((sum, purchase) => sum + (purchase.totalAmount || 0), 0);
 
   const getCostOfInvoice = (invoice: Invoice): number => {
-    if (!invoice || !invoice.items) return 0;
+    if (!invoice || !Array.isArray(invoice.items)) return 0;
 
     return invoice.items.reduce((invoiceCost, item) => {
       let itemCostBasis = 0;
