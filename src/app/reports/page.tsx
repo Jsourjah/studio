@@ -18,33 +18,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import type { Invoice, Material, Purchase } from '@/lib/types';
 import { format } from 'date-fns';
 import { ReportGenerator } from '@/components/report-generator';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Loader2, Terminal, AlertCircle } from 'lucide-react';
-import { checkReportAnomaly } from './actions';
-import type { ReportAnomalyDetectionOutput } from '@/ai/flows/report-anomaly-detection';
-import { monthlySummary } from '@/lib/data';
-
+import { Loader2 } from 'lucide-react';
 
 export default function ReportsPage() {
   const [invoices] = useLocalStorage<Invoice[]>('invoices', []);
   const [materials] = useLocalStorage<Material[]>('materials', []);
   const [purchases] = useLocalStorage<Purchase[]>('purchases', []);
   const [loading, setLoading] = useState(true);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<ReportAnomalyDetectionOutput | null>(null);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(false);
@@ -88,35 +72,6 @@ export default function ReportsPage() {
     cancelled:
       'bg-gray-500/20 text-gray-700 hover:bg-gray-500/30 dark:bg-gray-500/10 dark:text-gray-400',
   };
-
-  const handleAnalyzeReport = async () => {
-    setIsAnalyzing(true);
-    setAnalysisResult(null);
-    setAnalysisError(null);
-
-    const currentReportData = JSON.stringify({
-      totalRevenue,
-      outstandingRevenue,
-      totalInventoryValue,
-      totalPurchaseAmount,
-      recentPurchases: recentPurchases.length,
-    });
-
-    const pastReportData = JSON.stringify(monthlySummary);
-
-    const result = await checkReportAnomaly({
-      currentReportData,
-      pastReportData,
-    });
-
-    if (result.success) {
-      setAnalysisResult(result.data);
-    } else {
-      setAnalysisError(result.error);
-    }
-
-    setIsAnalyzing(false);
-  };
   
   if (loading) {
     return (
@@ -127,27 +82,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <ReportGenerator onAnalyze={handleAnalyzeReport} isAnalyzing={isAnalyzing}>
-       {analysisResult && (
-        <Alert variant={analysisResult.hasAnomaly ? 'destructive' : 'default'} className="mb-4">
-          <Terminal className="h-4 w-4" />
-          <AlertTitle>{analysisResult.hasAnomaly ? 'Anomaly Detected!' : 'Report Looks Normal'}</AlertTitle>
-          <AlertDescription>
-            {analysisResult.anomalyExplanation}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {analysisError && (
-          <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Analysis Error</AlertTitle>
-          <AlertDescription>
-            {analysisError}
-          </AlertDescription>
-        </Alert>
-      )}
-
+    <ReportGenerator>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader>

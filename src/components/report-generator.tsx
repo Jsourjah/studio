@@ -2,17 +2,15 @@
 
 import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Loader2, WandSparkles } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 
 type ReportGeneratorProps = {
   children: React.ReactNode;
-  onAnalyze?: () => void;
-  isAnalyzing?: boolean;
 };
 
-export function ReportGenerator({ children, onAnalyze, isAnalyzing = false }: ReportGeneratorProps) {
+export function ReportGenerator({ children }: ReportGeneratorProps) {
   const reportRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -68,17 +66,7 @@ export function ReportGenerator({ children, onAnalyze, isAnalyzing = false }: Re
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Business Report</h2>
         <div className="flex items-center space-x-2">
-          {onAnalyze && (
-            <Button variant="outline" onClick={onAnalyze} disabled={isAnalyzing || isGenerating}>
-              {isAnalyzing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <WandSparkles className="mr-2 h-4 w-4" />
-              )}
-              Analyze Report
-            </Button>
-          )}
-          <Button onClick={handleDownloadPdf} disabled={isGenerating || isAnalyzing}>
+          <Button onClick={handleDownloadPdf} disabled={isGenerating}>
             {isGenerating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
