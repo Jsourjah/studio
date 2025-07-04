@@ -56,25 +56,28 @@ export default function ProductsPage() {
     setLoading(false);
   }, []);
 
+  const safeProductBundles = productBundles || [];
+  const safeMaterials = materials || [];
+
   const handleAddProduct = (newProductData: Omit<ProductBundle, 'id'>) => {
     const newId = `P${String(nextProductId).padStart(3, '0')}`;
     const newProduct: ProductBundle = {
       id: newId,
       ...newProductData,
     };
-    setProductBundles(prev => [...prev, newProduct]);
+    setProductBundles(prev => [...(prev || []), newProduct]);
     setNextProductId(prevId => prevId + 1);
   };
   
   const handleUpdateProduct = (updatedProduct: ProductBundle) => {
     setProductBundles(prev => 
-      prev.map(p => p.id === updatedProduct.id ? updatedProduct : p)
+      (prev || []).map(p => p.id === updatedProduct.id ? updatedProduct : p)
     );
     setProductToEdit(null);
   };
 
   const handleDeleteProduct = (id: string) => {
-    setProductBundles(prev => prev.filter(p => p.id !== id));
+    setProductBundles(prev => (prev || []).filter(p => p.id !== id));
     setProductToDelete(null);
   };
   
@@ -95,7 +98,7 @@ export default function ProductsPage() {
   };
   
   const getMaterialName = (id: string) => {
-    return materials.find(m => m.id === id)?.name || 'Unknown Material';
+    return safeMaterials.find(m => m.id === id)?.name || 'Unknown Material';
   };
 
   if (loading) {
@@ -114,7 +117,7 @@ export default function ProductsPage() {
           <div className="flex items-center space-x-2">
             <AddProductForm 
               onAddProduct={handleAddProduct} 
-              materials={materials}
+              materials={safeMaterials}
               onUpdateProduct={handleUpdateProduct}
               productToEdit={productToEdit}
               setProductToEdit={setProductToEdit}
@@ -122,7 +125,7 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {productBundles.length === 0 ? (
+        {safeProductBundles.length === 0 ? (
            <Card className="mt-6">
             <CardHeader>
               <CardTitle>No Products Found</CardTitle>
@@ -161,7 +164,7 @@ export default function ProductsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {productBundles.filter(Boolean).map((bundle, index) => (
+                  {safeProductBundles.filter(Boolean).map((bundle, index) => (
                       <TableRow key={bundle.id || index}>
                           <TableCell className="font-medium">{bundle.id}</TableCell>
                           <TableCell className="font-medium">{bundle.name || 'N/A'}</TableCell>

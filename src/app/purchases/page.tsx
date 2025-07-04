@@ -61,10 +61,11 @@ export default function PurchasesPage() {
   const [purchaseToDelete, setPurchaseToDelete] = useState<string | null>(null);
   const [purchaseToEdit, setPurchaseToEdit] = useState<Purchase | null>(null);
 
-
   useEffect(() => {
     setLoading(false);
   }, []);
+
+  const safePurchases = purchases || [];
   
   const handleAddPurchase = (newPurchaseData: Omit<Purchase, 'id'>) => {
     const newId = `P${String(nextPurchaseId).padStart(3, '0')}`;
@@ -72,19 +73,19 @@ export default function PurchasesPage() {
       id: newId,
       ...newPurchaseData,
     };
-    setPurchases(prevPurchases => [...prevPurchases, newPurchase]);
+    setPurchases(prevPurchases => [...(prevPurchases || []), newPurchase]);
     setNextPurchaseId(prevId => prevId + 1);
   };
   
   const handleUpdatePurchase = (updatedPurchase: Purchase) => {
     setPurchases(prev => 
-      prev.map(p => p.id === updatedPurchase.id ? updatedPurchase : p)
+      (prev || []).map(p => p.id === updatedPurchase.id ? updatedPurchase : p)
     );
     setPurchaseToEdit(null);
   };
 
   const handleDeletePurchase = (id: string) => {
-    setPurchases(prev => prev.filter(p => p.id !== id));
+    setPurchases(prev => (prev || []).filter(p => p.id !== id));
     setPurchaseToDelete(null);
   };
 
@@ -112,7 +113,7 @@ export default function PurchasesPage() {
     );
   }
 
-  const sortedPurchases = [...purchases].filter(Boolean).sort((a, b) => {
+  const sortedPurchases = [...safePurchases].filter(Boolean).sort((a, b) => {
     const timeA = a.date ? new Date(a.date).getTime() : 0;
     const timeB = b.date ? new Date(b.date).getTime() : 0;
     return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
@@ -133,7 +134,7 @@ export default function PurchasesPage() {
           </div>
         </div>
 
-        {purchases.length === 0 ? (
+        {safePurchases.length === 0 ? (
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>No Purchases Found</CardTitle>

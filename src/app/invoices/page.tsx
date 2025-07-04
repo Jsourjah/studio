@@ -98,6 +98,10 @@ export default function InvoicesPage() {
     setLoading(false);
   }, []);
 
+  const safeInvoices = invoices || [];
+  const safeMaterials = materials || [];
+  const safeProductBundles = productBundles || [];
+
   const handleAddInvoice = (newInvoiceData: Omit<Invoice, 'id'>) => {
     const newId = String(nextInvoiceId).padStart(4, '0');
     const newInvoice: Invoice = {
@@ -106,13 +110,13 @@ export default function InvoicesPage() {
     };
 
     // Deduct used materials from inventory
-    const updatedMaterials = [...materials];
+    const updatedMaterials = [...safeMaterials];
     let inventoryWasUpdated = false;
 
     newInvoice.items.forEach(item => {
       // If it's a product bundle, deduct its components
       if (item.productBundleId) {
-        const bundle = productBundles.find(b => b.id === item.productBundleId);
+        const bundle = safeProductBundles.find(b => b.id === item.productBundleId);
         if (bundle) {
           bundle.items.forEach(bundleItem => {
             const materialIndex = updatedMaterials.findIndex(m => m.id === bundleItem.materialId);
@@ -140,7 +144,7 @@ export default function InvoicesPage() {
       setMaterials(updatedMaterials);
     }
     
-    setInvoices((prevInvoices) => [...prevInvoices, newInvoice]);
+    setInvoices((prevInvoices) => [...(prevInvoices || []), newInvoice]);
     setNextInvoiceId((prevId) => prevId + 1);
     return newId;
   };
@@ -162,13 +166,13 @@ export default function InvoicesPage() {
   };
 
   const handleDeleteInvoice = (id: string) => {
-    setInvoices((prev) => prev.filter((invoice) => invoice.id !== id));
+    setInvoices((prev) => (prev || []).filter((invoice) => invoice.id !== id));
     setInvoiceToDelete(null);
   };
 
   const handleUpdateStatus = (id: string, status: Invoice['status']) => {
     setInvoices((prev) =>
-      prev.map((invoice) =>
+      (prev || []).map((invoice) =>
         invoice.id === id ? { ...invoice, status } : invoice
       )
     );
@@ -228,7 +232,7 @@ export default function InvoicesPage() {
     );
   }
 
-  const sortedInvoices = [...invoices].filter(Boolean).sort((a, b) => {
+  const sortedInvoices = [...safeInvoices].filter(Boolean).sort((a, b) => {
       const timeA = a.date ? new Date(a.date).getTime() : 0;
       const timeB = b.date ? new Date(b.date).getTime() : 0;
       return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
@@ -243,13 +247,13 @@ export default function InvoicesPage() {
           <div className="flex items-center space-x-2">
             <AddInvoiceForm
               onAddInvoice={handleAddInvoice}
-              materials={materials}
-              productBundles={productBundles}
+              materials={safeMaterials}
+              productBundles={safeProductBundles}
             />
           </div>
         </div>
 
-        {invoices.length === 0 ? (
+        {safeInvoices.length === 0 ? (
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>No Invoices Found</CardTitle>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -40,7 +41,9 @@ export default function Dashboard() {
     setLoading(false);
   }, []);
 
-  const unpaidInvoices = [...invoices]
+  const safeInvoices = invoices || [];
+
+  const unpaidInvoices = [...safeInvoices]
     .filter((invoice) => invoice && (invoice.status === 'unpaid' || invoice.status === 'overdue'))
     .sort((a, b) => {
       const timeA = a.date ? new Date(a.date).getTime() : 0;
@@ -49,11 +52,11 @@ export default function Dashboard() {
     })
     .slice(0, 5);
     
-  const totalSales = invoices
+  const totalSales = safeInvoices
     .filter((invoice) => invoice && invoice.status === 'paid')
     .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
 
-  const unpaidAmount = invoices
+  const unpaidAmount = safeInvoices
     .filter((invoice) => invoice && (invoice.status === 'unpaid' || invoice.status === 'overdue'))
     .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
   

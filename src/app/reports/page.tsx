@@ -43,24 +43,28 @@ export default function ReportsPage() {
     setLoading(false);
   }, []);
 
-  const totalRevenue = invoices
+  const safeInvoices = invoices || [];
+  const safeMaterials = materials || [];
+  const safePurchases = purchases || [];
+
+  const totalRevenue = safeInvoices
     .filter((invoice) => invoice && invoice.status === 'paid')
     .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
 
-  const outstandingRevenue = invoices
+  const outstandingRevenue = safeInvoices
     .filter((invoice) => invoice && (invoice.status === 'unpaid' || invoice.status === 'overdue'))
     .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
 
-  const totalInventoryValue = materials.reduce(
+  const totalInventoryValue = safeMaterials.reduce(
     (sum, material) => sum + ((material?.quantity || 0) * (material?.costPerUnit || 0)),
     0
   );
 
-  const totalPurchaseAmount = purchases
+  const totalPurchaseAmount = safePurchases
     .filter((purchase) => purchase && purchase.status === 'completed')
     .reduce((sum, purchase) => sum + (purchase.totalAmount || 0), 0);
   
-  const recentPurchases = [...purchases]
+  const recentPurchases = [...safePurchases]
     .filter(Boolean)
     .sort((a, b) => {
       const timeA = a.date ? new Date(a.date).getTime() : 0;

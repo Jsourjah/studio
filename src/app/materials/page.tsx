@@ -54,25 +54,27 @@ export default function MaterialsPage() {
     setLoading(false);
   }, []);
 
+  const safeMaterials = materials || [];
+
   const handleAddMaterial = (newMaterialData: Omit<Material, 'id'>) => {
     const newId = `M${String(nextMaterialId).padStart(3, '0')}`;
     const newMaterial: Material = {
       id: newId,
       ...newMaterialData,
     };
-    setMaterials(prevMaterials => [...prevMaterials, newMaterial]);
+    setMaterials(prevMaterials => [...(prevMaterials || []), newMaterial]);
     setNextMaterialId(prevId => prevId + 1);
   };
   
   const handleUpdateMaterial = (updatedMaterial: Material) => {
     setMaterials(prev => 
-      prev.map(m => m.id === updatedMaterial.id ? updatedMaterial : m)
+      (prev || []).map(m => m.id === updatedMaterial.id ? updatedMaterial : m)
     );
     setMaterialToEdit(null);
   };
 
   const handleDeleteMaterial = (id: string) => {
-    setMaterials(prev => prev.filter(m => m.id !== id));
+    setMaterials(prev => (prev || []).filter(m => m.id !== id));
     setMaterialToDelete(null);
   };
   
@@ -115,7 +117,7 @@ export default function MaterialsPage() {
           </div>
         </div>
 
-        {materials.length === 0 ? (
+        {safeMaterials.length === 0 ? (
            <Card className="mt-6">
             <CardHeader>
               <CardTitle>No Materials Found</CardTitle>
@@ -158,7 +160,7 @@ export default function MaterialsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {materials.filter(Boolean).map((material, index) => (
+                  {safeMaterials.filter(Boolean).map((material, index) => (
                     <TableRow key={material.id || index}>
                       <TableCell className="font-medium truncate max-w-[100px]">{material.id || ''}</TableCell>
                       <TableCell>{material.name || 'N/A'}</TableCell>
