@@ -81,7 +81,7 @@ export function AddPurchaseForm({ onAddPurchase }: AddPurchaseFormProps) {
   function onSubmit(values: z.infer<typeof purchaseSchema>) {
     const purchaseData = {
       ...values,
-      date: values.date,
+      date: values.date.toISOString(),
     };
     onAddPurchase(purchaseData);
     form.reset({

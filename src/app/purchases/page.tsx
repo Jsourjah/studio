@@ -105,7 +105,7 @@ export default function PurchasesPage() {
         supplier: newPurchaseData.supplier,
         items: newPurchaseData.items,
         status: newPurchaseData.status,
-        date: newPurchaseData.date.toISOString(),
+ date: new Date(newPurchaseData.date).toISOString(),
         totalAmount,
     };
     
