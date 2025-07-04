@@ -4,13 +4,6 @@
 import { useState, useEffect } from 'react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
   Table,
   TableBody,
   TableCell,
@@ -80,7 +73,7 @@ export default function ReportsPage() {
         const bundle = safeProductBundles.find(
           (b) => b.id === item.productBundleId
         );
-        if (bundle) {
+        if (bundle && Array.isArray(bundle.items)) {
           itemCostBasis = bundle.items.reduce((bundleCost, bundleItem) => {
             const material = safeMaterials.find(
               (m) => m.id === bundleItem.materialId
@@ -194,13 +187,11 @@ export default function ReportsPage() {
 
   return (
     <ReportGenerator>
-      <div className="grid grid-cols-1 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Financial Summary</CardTitle>
-            <CardDescription>A top-level overview of your business finances.</CardDescription>
-          </CardHeader>
-          <CardContent>
+      <div className="space-y-8">
+        <div>
+          <h3 className="text-2xl font-semibold tracking-tight">Financial Summary</h3>
+          <p className="text-sm text-muted-foreground mb-4">A top-level overview of your business finances.</p>
+          <div className="rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -222,52 +213,47 @@ export default function ReportsPage() {
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Invoice Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-center">Invoice Count</TableHead>
-                  <TableHead className="text-right">Total Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell className="font-medium">Paid</TableCell>
-                  <TableCell className="text-center">{paidInvoices.length}</TableCell>
-                  <TableCell className="text-right">Rs.{paidAmount.toFixed(2)}</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell className="font-medium">Unpaid/Overdue</TableCell>
-                  <TableCell className="text-center">{unpaidInvoices.length}</TableCell>
-                  <TableCell className="text-right">Rs.{unpaidAmount.toFixed(2)}</TableCell>
-                </TableRow>
-              </TableBody>
-              <TableFooter>
-                <TableRow>
-                  <TableHead>Total</TableHead>
-                  <TableHead className="text-center">{safeInvoices.length}</TableHead>
-                  <TableHead className="text-right">Rs.{totalRevenue.toFixed(2)}</TableHead>
-                </TableRow>
-              </TableFooter>
-            </Table>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Material Purchase Summary</CardTitle>
-            <CardDescription>Based on completed purchases.</CardDescription>
-          </CardHeader>
-          <CardContent>
+        <div>
+            <h3 className="text-2xl font-semibold tracking-tight mt-6">Invoice Summary</h3>
+            <div className="mt-4 rounded-lg border">
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-center">Invoice Count</TableHead>
+                    <TableHead className="text-right">Total Amount</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    <TableRow>
+                    <TableCell className="font-medium">Paid</TableCell>
+                    <TableCell className="text-center">{paidInvoices.length}</TableCell>
+                    <TableCell className="text-right">Rs.{paidAmount.toFixed(2)}</TableCell>
+                    </TableRow>
+                    <TableRow>
+                    <TableCell className="font-medium">Unpaid/Overdue</TableCell>
+                    <TableCell className="text-center">{unpaidInvoices.length}</TableCell>
+                    <TableCell className="text-right">Rs.{unpaidAmount.toFixed(2)}</TableCell>
+                    </TableRow>
+                </TableBody>
+                <TableFooter>
+                    <TableRow>
+                    <TableHead>Total</TableHead>
+                    <TableHead className="text-center">{safeInvoices.length}</TableHead>
+                    <TableHead className="text-right">Rs.{totalRevenue.toFixed(2)}</TableHead>
+                    </TableRow>
+                </TableFooter>
+                </Table>
+            </div>
+        </div>
+
+        <div>
+            <h3 className="text-2xl font-semibold tracking-tight mt-6">Material Purchase Summary</h3>
+            <p className="text-sm text-muted-foreground mb-4">Based on completed purchases.</p>
+            <div className="mt-4 rounded-lg border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -286,35 +272,31 @@ export default function ReportsPage() {
                 ))}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
-      </div>
+            </div>
+        </div>
 
-       <div className="mt-6">
-        <Card>
-            <CardHeader>
-                <CardTitle>Material Usage in Invoices</CardTitle>
-                <CardDescription>How many invoices each material appears in.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Material Name</TableHead>
-                            <TableHead className="text-right">Used in # of Invoices</TableHead>
+       <div>
+            <h3 className="text-2xl font-semibold tracking-tight mt-6">Material Usage in Invoices</h3>
+            <p className="text-sm text-muted-foreground mb-4">How many invoices each material appears in.</p>
+            <div className="mt-4 rounded-lg border">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Material Name</TableHead>
+                        <TableHead className="text-right">Used in # of Invoices</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {materialUsageReportData.map((item) => (
+                        <TableRow key={item.name}>
+                            <TableCell className="font-medium">{item.name}</TableCell>
+                            <TableCell className="text-right">{item.invoiceCount}</TableCell>
                         </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {materialUsageReportData.map((item) => (
-                            <TableRow key={item.name}>
-                                <TableCell className="font-medium">{item.name}</TableCell>
-                                <TableCell className="text-right">{item.invoiceCount}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
+                    ))}
+                </TableBody>
+            </Table>
+            </div>
+        </div>
     </div>
     </ReportGenerator>
   );
