@@ -4,6 +4,13 @@
 import { useState, useEffect } from 'react';
 import useLocalStorage from '@/hooks/use-local-storage';
 import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from '@/components/ui/card';
+import {
   Table,
   TableBody,
   TableCell,
@@ -12,12 +19,28 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
-import type { Invoice } from '@/lib/types';
+import {
+  Loader2,
+  DollarSign,
+  TrendingUp,
+  Wallet,
+  ShoppingCart,
+} from 'lucide-react';
+import type { Invoice, Material, ProductBundle, Purchase } from '@/lib/types';
 import { format } from 'date-fns';
+import { getCostOfInvoice } from '@/lib/calculations';
+import { initialProductBundles } from '@/lib/data';
+import { DashboardChart } from '@/components/dashboard-chart';
+import type { ChartConfig } from '@/components/ui/chart';
 
 export default function Dashboard() {
   const [invoices] = useLocalStorage<Invoice[]>('invoices', []);
+  const [materials] = useLocalStorage<Material[]>('materials', []);
+  const [purchases] = useLocalStorage<Purchase[]>('purchases', []);
+  const [productBundles] = useLocalStorage<ProductBundle[]>(
+    'productBundles',
+    initialProductBundles
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,21 +48,76 @@ export default function Dashboard() {
   }, []);
 
   const safeInvoices = invoices || [];
-  
+  const safeMaterials = materials || [];
+  const safePurchases = purchases || [];
+  const safeProductBundles = productBundles || [];
+
+  // Calculations for summary cards
+  const totalRevenue = safeInvoices.reduce(
+    (sum, invoice) => sum + (invoice?.amount || 0),
+    0
+  );
+
+  const collectedRevenue = safeInvoices
+    .filter((invoice) => invoice && invoice.status === 'paid')
+    .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
+
+  const cogsForPaidInvoices = safeInvoices
+    .filter((i) => i.status === 'paid')
+    .reduce(
+      (sum, invoice) =>
+        sum + getCostOfInvoice(invoice, safeMaterials, safeProductBundles),
+      0
+    );
+
+  const grossProfit = collectedRevenue - cogsForPaidInvoices;
+
+  const totalPurchases = safePurchases
+    .filter((purchase) => purchase && purchase.status === 'completed')
+    .reduce((sum, purchase) => sum + (purchase.totalAmount || 0), 0);
+
+  // Data for unpaid invoices table
   const unpaidInvoices = [...safeInvoices]
-    .filter((invoice) => invoice && (invoice.status === 'unpaid' || invoice.status === 'overdue'))
+    .filter(
+      (invoice) =>
+        invoice && (invoice.status === 'unpaid' || invoice.status === 'overdue')
+    )
     .sort((a, b) => {
-        const timeA = a.date ? new Date(a.date).getTime() : 0;
-        const timeB = b.date ? new Date(b.date).getTime() : 0;
-        return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
+      const timeA = a.date ? new Date(a.date).getTime() : 0;
+      const timeB = b.date ? new Date(b.date).getTime() : 0;
+      return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
     })
     .slice(0, 5);
 
   const statusStyles: { [key: string]: string } = {
-    unpaid: 'bg-amber-500/20 text-amber-700 hover:bg-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400',
-    overdue: 'bg-red-500/20 text-red-700 hover:bg-red-500/30 dark:bg-red-500/10 dark:text-red-400',
+    unpaid:
+      'bg-amber-500/20 text-amber-700 hover:bg-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400',
+    overdue:
+      'bg-red-500/20 text-red-700 hover:bg-red-500/30 dark:bg-red-500/10 dark:text-red-400',
   };
 
+  // Data for inventory chart
+  const inventoryChartData = safeMaterials
+    .map((m) => ({
+      name: m.name,
+      value: (m.quantity || 0) * (m.costPerUnit || 0),
+    }))
+    .filter((item) => item.value > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
+
+  const chartConfig = {
+    value: {
+      label: 'Value',
+    },
+    ...inventoryChartData.reduce((acc, item, index) => {
+      acc[item.name] = {
+        label: item.name,
+        color: `hsl(var(--chart-${(index % 5) + 1}))`,
+      };
+      return acc;
+    }, {} as { [key: string]: any }),
+  } satisfies ChartConfig;
 
   if (loading) {
     return (
@@ -52,47 +130,139 @@ export default function Dashboard() {
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-      
-       <div className="grid gap-4">
-        <div className="col-span-12">
-            <h3 className="text-2xl font-semibold tracking-tight">Recent Unpaid Invoices</h3>
-            <p className="text-sm text-muted-foreground mb-4">Your 5 most recent unpaid or overdue invoices.</p>
-               {unpaidInvoices.length > 0 ? (
-                <div className="rounded-lg border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Customer</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {unpaidInvoices.map((invoice) => (
-                            <TableRow key={invoice.id}>
-                                <TableCell>
-                                    <div className="font-medium">{invoice.customer}</div>
-                                    <div className="text-sm text-muted-foreground">
-                                        {invoice.date && !isNaN(new Date(invoice.date).getTime()) ? format(new Date(invoice.date), 'PPP') : 'No date'}
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant="outline" className={statusStyles[invoice.status] || ''}>
-                                        {(invoice.status || 'unknown').charAt(0).toUpperCase() + (invoice.status || 'unknown').slice(1)}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-right">Rs.{(invoice.amount || 0).toFixed(2)}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                </div>
-                ) : (
-                <div className="p-6 text-center text-sm text-muted-foreground border rounded-lg">
-                    You have no unpaid invoices. Great job!
-                </div>
-                )}
-        </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              Rs.{totalRevenue.toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground">From all invoices</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Gross Profit</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Rs.{grossProfit.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              Collected revenue minus COGS
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Collected Revenue
+            </CardTitle>
+            <Wallet className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              Rs.{collectedRevenue.toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground">From paid invoices</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Purchases
+            </CardTitle>
+            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              Rs.{totalPurchases.toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              From completed purchase orders
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-full lg:col-span-4">
+          <CardHeader>
+            <CardTitle>Recent Unpaid Invoices</CardTitle>
+            <CardDescription>
+              Your 5 most recent unpaid or overdue invoices.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {unpaidInvoices.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {unpaidInvoices.map((invoice) => (
+                    <TableRow key={invoice.id}>
+                      <TableCell>
+                        <div className="font-medium">{invoice.customer}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {invoice.date &&
+                          !isNaN(new Date(invoice.date).getTime())
+                            ? format(new Date(invoice.date), 'PPP')
+                            : 'No date'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={statusStyles[invoice.status] || ''}
+                        >
+                          {(invoice.status || 'unknown').charAt(0).toUpperCase() +
+                            (invoice.status || 'unknown').slice(1)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        Rs.{(invoice.amount || 0).toFixed(2)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                You have no unpaid invoices. Great job!
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-full lg:col-span-3">
+          <CardHeader>
+            <CardTitle>Inventory by Value</CardTitle>
+            <CardDescription>
+              Top 5 materials by their total stock value.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pb-8">
+            {inventoryChartData.length > 0 ? (
+                <DashboardChart
+                data={inventoryChartData}
+                chartConfig={chartConfig}
+                totalLabel="Total Value"
+              />
+            ) : (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                No inventory data to display.
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
