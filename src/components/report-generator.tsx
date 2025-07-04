@@ -24,7 +24,6 @@ export function ReportGenerator({ children }: ReportGeneratorProps) {
       const canvas = await html2canvas(input, {
         scale: 2, // Higher scale for better quality
         useCORS: true,
-        backgroundColor: '#ffffff', // Set background to white
       });
       
       const imgData = canvas.toDataURL('image/png');
@@ -38,12 +37,34 @@ export function ReportGenerator({ children }: ReportGeneratorProps) {
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const margin = 40;
+      const contentWidth = pdfWidth - margin * 2;
+      const contentHeight = pdfHeight - margin * 2;
+
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgAspectRatio = imgProps.width / imgProps.height;
+
+      let renderWidth = contentWidth;
+      let renderHeight = contentWidth / imgAspectRatio;
+      
+      if (renderHeight > contentHeight) {
+          renderHeight = contentHeight;
+          renderWidth = contentHeight * imgAspectRatio;
+      }
+      
+      const x = margin + (contentWidth - renderWidth) / 2;
+      const y = margin + (contentHeight - renderHeight) / 2;
+
+      pdf.addImage(imgData, 'PNG', x, y, renderWidth, renderHeight);
+      
+      // Add a border around the page content
+      pdf.setDrawColor(0); // Black border
+      pdf.rect(margin, margin, contentWidth, contentHeight);
+
       pdf.save('business-report.pdf');
 
     } catch (error) {
       console.error('Failed to generate PDF', error);
-      // Optionally, show a toast notification for the error
     } finally {
       setIsGenerating(false);
     }
@@ -64,7 +85,8 @@ export function ReportGenerator({ children }: ReportGeneratorProps) {
           </Button>
         </div>
       </div>
-      <div id="report-content" ref={reportRef} className="space-y-4 bg-background">
+      {/* Adding padding to the content that will be captured for the PDF */}
+      <div id="report-content" ref={reportRef} className="space-y-4 bg-background p-6">
         {children}
       </div>
     </div>
