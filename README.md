@@ -38,6 +38,19 @@ This project uses Firebase for its database. You'll need to connect it to your o
     - Select your web app and find the `firebaseConfig` object.
     - Copy the values into the corresponding variables in your `.env` file.
 
+### 3a. Initialize Your Firestore Database
+
+The `FirebaseError: Failed to get document because the client is offline.` error usually means that the Firestore database hasn't been created in your Firebase project yet. Follow these steps in the Firebase Console to set it up:
+
+1.  **Go to the Firebase Console:** [console.firebase.google.com](https://console.firebase.google.com/)
+2.  **Select Your Project:** Choose your project (e.g., `profitvision-xxvpj`).
+3.  **Navigate to Firestore:** On the left-hand menu, click **Build > Firestore Database**.
+4.  **Create Database:** Click the **Create database** button.
+5.  **Start in Test Mode:** When prompted for security rules, select **Start in test mode**. This will allow your app to read and write data while you're developing. You can change these rules later for production.
+6.  **Choose a Location:** Select a location for your database (the one closest to you is usually best) and click **Enable**.
+
+After the database is created, your running application should be able to connect successfully.
+
 ### 4. Run the Development Server
 
 When you want to work on the code, you should use the development server. This command starts the application with features like Fast Refresh that make development easier.
