@@ -30,17 +30,16 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
         fontSize: '32px'
       }}
     >
-      {/* Customer Info */}
-      <div className="absolute" style={{ top: '320px', left: '112px', width: '500px' }}>
-        <p className="font-semibold" style={{ fontSize: '40px' }}>{invoice.customer}</p>
-        {invoice.address && <p className="mt-2">{invoice.address}</p>}
-        {invoice.phone && <p className="mt-2">{invoice.phone}</p>}
-      </div>
-
-      {/* Invoice Details */}
-      <div className="absolute" style={{ top: '480px', left: '112px', width: '500px' }}>
+       {/* Invoice Details */}
+       <div className="absolute" style={{ top: '220px', left: '50px', width: '500px' }}>
           <p><span className="font-medium">Invoice #:</span> {invoice.id}</p>
           <p className="mt-2"><span className="font-medium">Date:</span> {invoice.date && !isNaN(new Date(invoice.date).getTime()) ? format(new Date(invoice.date), 'PPP') : 'N/A'}</p>
+       </div>
+       {/* Customer Info */}
+       <div className="absolute" style={{ top: '320px', left: '50px', width: '500px' }}>
+          <p><span className="font-medium">Name:</span> {invoice.customer}</p>
+          <p><span className="font-medium">Address:</span> {invoice.address && invoice.address}</p>
+          <p><span className="font-medium">Tel:</span> {invoice.phone && invoice.phone}</p>
       </div>
       
       <div className="absolute" style={{ top: '680px', left: '112px', right: '112px' }}>
@@ -69,19 +68,17 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr className="border-t-2 border-gray-500 font-medium">
+              <td colSpan={3} className="p-4 pt-4 text-right">Subtotal</td>
+              <td className="p-4 pt-4 text-right">Rs.{subtotal.toFixed(2)}</td>
+            </tr>
+            <tr className="font-bold">
+              <td colSpan={3} className="p-4 text-right">Total</td>
+              <td className="p-4 text-right">Rs.{total.toFixed(2)}</td>
+            </tr>
+          </tfoot>
         </table>
-      </div>
-
-      <div className="absolute" style={{ bottom: '260px', right: '112px', width: '480px' }}>
-          <div className="flex justify-between mb-4">
-              <span>Subtotal</span>
-              <span className="font-medium">Rs.{subtotal.toFixed(2)}</span>
-          </div>
-          <div className="border-t-2 border-gray-400 my-4"></div>
-          <div className="flex justify-between font-bold">
-              <span>Total</span>
-              <span>Rs.{total.toFixed(2)}</span>
-          </div>
       </div>
 
       {invoice.status === 'paid' && (
