@@ -64,9 +64,11 @@ Once installed, you can launch it from your desktop or start menu just like any 
 
 For your business, the best approach is to deploy the application to Firebase Hosting. This will make it a live website accessible from anywhere, without needing to run commands on your computer.
 
+This project is pre-configured for a seamless deployment to Firebase Hosting. The included `firebase.json` file tells Firebase how to build and serve your application.
+
 ### 1. Login to Firebase
 
-In your terminal, run this command and follow the prompts to log in to your Google account:
+If you haven't already, run this command in your terminal and follow the prompts to log in to your Google account:
 ```bash
 firebase login
 ```
@@ -77,5 +79,6 @@ In your project's root directory, run the following command:
 ```bash
 firebase deploy
 ```
+The Firebase CLI will automatically build your project and deploy it to Firebase Hosting. The first time you run this command, it may ask you to select a Firebase project.
 
-The Firebase CLI will build your project and deploy it. Once it's finished, it will give you a **Hosting URL**. You can visit this URL in your browser to use your live application!
+Once it's finished, it will give you a **Hosting URL**. You can visit this URL in your browser to use your live application!
