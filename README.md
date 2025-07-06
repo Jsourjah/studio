@@ -60,29 +60,39 @@ To install the app:
 
 Once installed, you can launch it from your desktop or start menu just like any other application.
 
-## Deploying to Firebase (Recommended for Business Use)
+## Deploying to Firebase
 
-For your business, the best approach is to deploy the application to Firebase Hosting. This will make it a live website accessible from anywhere, without needing to run commands on your computer.
+This project is ready to be deployed to Firebase Hosting, which will make it a live website accessible from anywhere.
 
 **Is Firebase Hosting Free?**
 
-Yes, Firebase Hosting has a generous free tier (the Spark Plan) that is perfect for most applications. It includes 10 GB of storage and a significant amount of data transfer per month at no cost. For this application, the free tier is more than enough to get you started and run your business.
+Yes, Firebase Hosting has a generous free tier (the Spark Plan) that is perfect for most applications. It includes 10 GB of storage and a significant amount of data transfer per month at no cost. For this application, the free tier is more than enough.
 
-This project is pre-configured for a seamless deployment to Firebase Hosting. The included `firebase.json` file tells Firebase how to build and serve your application.
+### Step 1: Install the Firebase CLI
 
-### 1. Login to Firebase
+If you haven't already, install the Firebase Command Line Interface on your computer by running this command in your terminal:
 
-If you haven't already, run this command in your terminal and follow the prompts to log in to your Google account:
+```bash
+npm install -g firebase-tools
+```
+
+### Step 2: Login to Firebase
+
+Next, run this command and follow the prompts to log in to your Google account:
 ```bash
 firebase login
 ```
 
-### 2. Deploy the Application
+### Step 3: Deploy Your App
 
-In your project's root directory, run the following command:
+Finally, from your project's root directory, run the deploy command:
+
 ```bash
 firebase deploy
 ```
-The Firebase CLI will automatically build your project and deploy it to Firebase Hosting. The first time you run this command, it may ask you to select a Firebase project.
 
-Once it's finished, it will give you a **Hosting URL**. You can visit this URL in your browser to use your live application!
+**What to Expect:**
+
+- The first time you run this, you'll be asked to select a Firebase project. You can either choose an existing one or create a new one right from the command line.
+- The Firebase CLI will automatically build your project and deploy it.
+- Once finished, it will give you a **Hosting URL**. You can visit this URL in your browser to use your live application!
