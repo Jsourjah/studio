@@ -112,11 +112,11 @@ export default function Dashboard() {
 
   // Define specific colors for your material categories here
   const categoryColorMap: { [key: string]: string } = {
-    "Laminating Sheet": "hsl(var(--chart-1))",
-    "A4 Paper": "hsl(var(--chart-2))",
-    "Steel Beams": "hsl(var(--chart-3))",
-    "Concrete Mix": "hsl(var(--chart-4))",
-    "Plywood Sheets": "hsl(var(--chart-5))",
+    "Laminating Sheet": "hsl(var(--chart-3))",
+    "A4 Paper": "hsl(var(--chart-4))",
+    "Steel Beams": "hsl(var(--chart-1))",
+    "Concrete Mix": "hsl(var(--chart-5))",
+    "Plywood Sheets": "hsl(var(--chart-2))",
     "Copper Wiring (ft)": "hsl(var(--chart-1))",
     "PVC Pipes": "hsl(var(--chart-2))",
     // Add more material names and their desired colors here.
