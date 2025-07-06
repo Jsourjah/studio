@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Label, Pie, PieChart as RechartsPieChart } from "recharts"
+import { Label, Pie, PieChart as RechartsPieChart, Cell } from "recharts"
 
 import {
   ChartContainer,
@@ -41,11 +41,18 @@ export function DashboardChart({ data, chartConfig, totalLabel = "Total", valueF
                 <Pie
                     data={data}
                     dataKey="value"
-                    nameKey="name"
+                    nameKey="slug"
                     innerRadius="50%"
                     strokeWidth={5}
                     stroke="hsl(var(--card))"
                 >
+                    {data.map((entry) => (
+                      <Cell
+                        key={entry.name}
+                        fill={`var(--color-${entry.slug})`}
+                        className="[&>path]:stroke-border"
+                      />
+                    ))}
                     <Label
                         content={({ viewBox }) => {
                             if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
@@ -77,7 +84,7 @@ export function DashboardChart({ data, chartConfig, totalLabel = "Total", valueF
                     />
                 </Pie>
                 <ChartLegend
-                    content={<ChartLegendContent nameKey="name" />}
+                    content={<ChartLegendContent nameKey="slug" />}
                     verticalAlign="bottom"
                     height={50}
                 />

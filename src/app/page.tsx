@@ -35,6 +35,13 @@ import { DashboardChart } from '@/components/dashboard-chart';
 import { RevenueChart } from '@/components/revenue-chart';
 import type { ChartConfig } from '@/components/ui/chart';
 
+const slugify = (str: string) =>
+  str
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '');
+
+
 export default function Dashboard() {
   const [invoices] = useLocalStorage<Invoice[]>('invoices', []);
   const [materials] = useLocalStorage<Material[]>('materials', []);
@@ -105,6 +112,7 @@ export default function Dashboard() {
     .map((m) => ({
       name: m.name,
       value: (m.quantity || 0) * (m.costPerUnit || 0),
+      slug: slugify(m.name),
     }))
     .filter((item) => item.value > 0)
     .sort((a, b) => b.value - a.value)
@@ -127,7 +135,7 @@ export default function Dashboard() {
       label: 'Value',
     },
     ...inventoryChartData.reduce((acc, item, index) => {
-      acc[item.name] = {
+      acc[item.slug] = {
         label: item.name,
         // Use the color from the map, or fall back to a default cycle of 5 colors
         color: categoryColorMap[item.name] || `hsl(var(--chart-${(index % 5) + 1}))`,
