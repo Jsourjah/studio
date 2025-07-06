@@ -30,19 +30,50 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
         fontSize: '32px'
       }}
     >
-       {/* Invoice Details */}
-       <div className="absolute" style={{ top: '220px', left: '50px', width: '500px' }}>
-          <p><span className="font-medium">Invoice #:</span> {invoice.id}</p>
-          <p className="mt-2"><span className="font-medium">Date:</span> {invoice.date && !isNaN(new Date(invoice.date).getTime()) ? format(new Date(invoice.date), 'PPP') : 'N/A'}</p>
-       </div>
-       {/* Customer Info */}
-       <div className="absolute" style={{ top: '320px', left: '50px', width: '500px' }}>
-          <p><span className="font-medium">Name:</span> {invoice.customer}</p>
-          <p><span className="font-medium">Address:</span> {invoice.address && invoice.address}</p>
-          <p><span className="font-medium">Tel:</span> {invoice.phone && invoice.phone}</p>
-      </div>
+       <table
+  className="absolute font-medium leading-relaxed"
+  style={{ top: '180px', left: '50px', width: '1000px', fontFamily: 'Arial, sans-serif' }}
+>
+  <tbody>
+    {/* Invoice Info */}
+    <tr>
+      <td className="font-semibold pr-4 w-[120px]">Invoice</td>
+      <td className="pr-2">:</td>
+      <td>{invoice.id}</td>
+    </tr>
+    <tr>
+      <td className="font-semibold pr-4">Date</td>
+      <td className="pr-2">:</td>
+      <td>
+        {invoice.date && !isNaN(new Date(invoice.date).getTime())
+          ? format(new Date(invoice.date), 'PPP')
+          : 'N/A'}
+      </td>
+    </tr>
+
+    {/* Spacer */}
+    <tr><td colSpan={3} className="py-2"></td></tr>
+
+    {/* Customer Info */}
+    <tr>
+      <td className="font-semibold pr-4">Name</td>
+      <td className="pr-2">:</td>
+      <td>{invoice.customer}</td>
+    </tr>
+    <tr>
+      <td className="font-semibold pr-4">Address</td>
+      <td className="pr-2">:</td>
+      <td>{invoice.address || 'N/A'}</td>
+    </tr>
+    <tr>
+      <td className="font-semibold pr-4">Tel</td>
+      <td className="pr-2">:</td>
+      <td>{invoice.phone || 'N/A'}</td>
+    </tr>
+  </tbody>
+</table>
       
-      <div className="absolute" style={{ top: '680px', left: '112px', right: '112px' }}>
+      <div className="absolute" style={{ top: '550px', left: '112px', right: '112px' }}>
         <table className="w-full text-left" style={{ tableLayout: 'fixed' }}>
           <colgroup>
             <col style={{ width: '45%' }} />
@@ -89,6 +120,7 @@ export function InvoicePdf({ invoice }: InvoicePdfProps) {
               height={200}
               alt="Paid Stamp"
               className="opacity-80"
+              style={{ transform: 'rotate(-20deg)' }}
             />
         </div>
       )}
