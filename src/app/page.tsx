@@ -110,6 +110,18 @@ export default function Dashboard() {
     .sort((a, b) => b.value - a.value)
     .slice(0, 5);
 
+  // Define specific colors for your material categories here
+  const categoryColorMap: { [key: string]: string } = {
+    "Laminating Sheet": "hsl(var(--chart-1))",
+    "A4 Paper": "hsl(var(--chart-2))",
+    "Steel Beams": "hsl(var(--chart-3))",
+    "Concrete Mix": "hsl(var(--chart-4))",
+    "Plywood Sheets": "hsl(var(--chart-5))",
+    "Copper Wiring (ft)": "hsl(var(--chart-1))",
+    "PVC Pipes": "hsl(var(--chart-2))",
+    // Add more material names and their desired colors here.
+  };
+
   const inventoryChartConfig = {
     value: {
       label: 'Value',
@@ -117,7 +129,8 @@ export default function Dashboard() {
     ...inventoryChartData.reduce((acc, item, index) => {
       acc[item.name] = {
         label: item.name,
-        color: `hsl(var(--chart-${(index % 5) + 1}))`,
+        // Use the color from the map, or fall back to a default cycle of 5 colors
+        color: categoryColorMap[item.name] || `hsl(var(--chart-${(index % 5) + 1}))`,
       };
       return acc;
     }, {} as { [key: string]: any }),
