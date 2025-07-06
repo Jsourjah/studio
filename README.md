@@ -64,6 +64,10 @@ Once installed, you can launch it from your desktop or start menu just like any 
 
 For your business, the best approach is to deploy the application to Firebase Hosting. This will make it a live website accessible from anywhere, without needing to run commands on your computer.
 
+**Is Firebase Hosting Free?**
+
+Yes, Firebase Hosting has a generous free tier (the Spark Plan) that is perfect for most applications. It includes 10 GB of storage and a significant amount of data transfer per month at no cost. For this application, the free tier is more than enough to get you started and run your business.
+
 This project is pre-configured for a seamless deployment to Firebase Hosting. The included `firebase.json` file tells Firebase how to build and serve your application.
 
 ### 1. Login to Firebase
