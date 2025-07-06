@@ -62,6 +62,8 @@ Once installed, you can launch it from your desktop or start menu just like any 
 
 ## Deploying to Firebase
 
+To deploy your application, you'll need to run a few commands from your computer's terminal after you've downloaded the project files.
+
 This project is ready to be deployed to Firebase Hosting, which will make it a live website accessible from anywhere.
 
 **Is Firebase Hosting Free?**
