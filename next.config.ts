@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  devIndicators: {
+    allowedDevOrigins: ['http://localhost:9002', 'http://192.168.1.90:9002'],
+  },
 };
 
 export default nextConfig;
