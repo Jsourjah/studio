@@ -12,17 +12,9 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Log the configuration to help with debugging.
-// You can check your browser's developer console to see these values.
-console.log("Attempting to connect with Firebase config:", firebaseConfig);
-if (!firebaseConfig.projectId) {
-    console.error("CRITICAL: Firebase project ID is missing. Check your .env file and ensure it's loaded correctly.");
-}
 
-
-const config: FirebaseOptions = firebaseConfig;
 // Initialize Firebase
-const app = !getApps().length ? initializeApp(config) : getApp();
+const app = !getApps().length ? initializeApp(firebaseConfig as FirebaseOptions) : getApp();
 const db: Firestore = getFirestore(app);
 
 export { db };
