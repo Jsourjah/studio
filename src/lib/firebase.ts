@@ -12,6 +12,18 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// --- Firebase Config Check ---
+// The following log helps you verify that your .env configuration is being loaded correctly.
+// Compare these values with your Firebase project settings.
+console.group("Firebase Config Check");
+console.log("Project ID:", firebaseConfig.projectId);
+console.log("API Key:", firebaseConfig.apiKey);
+if (!firebaseConfig.projectId) {
+  console.error("CRITICAL: Firebase projectId is missing. Your .env file might not be configured correctly.");
+}
+console.groupEnd();
+// -----------------------------
+
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig as FirebaseOptions) : getApp();
