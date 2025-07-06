@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import useLocalStorage from '@/hooks/use-local-storage';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, doc, updateDoc, deleteDoc, getDocs, query, writeBatch } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import {
@@ -38,34 +39,32 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Loader2, Database, MoreHorizontal, Edit, Trash2, ShoppingCart } from 'lucide-react';
-import { initialMaterials } from '@/lib/data';
+import { Loader2, MoreHorizontal, Edit, Trash2, ShoppingCart } from 'lucide-react';
 import type { Material } from '@/lib/types';
 import { AddMaterialForm } from '@/components/add-material-form';
 
 export default function MaterialsPage() {
-  const [materials, setMaterials] = useLocalStorage<Material[]>('materials', []);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [materialToDelete, setMaterialToDelete] = useState<string | null>(null);
   const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
 
   useEffect(() => {
-    // We just need to switch off loading state once, after the initial mount.
-    // The useLocalStorage hook will handle hydrating the data from there.
-    setLoading(false);
+    const unsubscribe = onSnapshot(collection(db, 'materials'), (snapshot) => {
+      setMaterials(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Material)));
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
   
-  const safeMaterials = materials || [];
-
-  const handleUpdateMaterial = (updatedMaterial: Material) => {
-    setMaterials(prev => 
-      (prev || []).map(m => m.id === updatedMaterial.id ? updatedMaterial : m)
-    );
+  const handleUpdateMaterial = async (updatedMaterial: Material) => {
+    const { id, ...data } = updatedMaterial;
+    await updateDoc(doc(db, 'materials', id), data);
     setMaterialToEdit(null);
   };
 
-  const handleDeleteMaterial = (id: string) => {
-    setMaterials(prev => (prev || []).filter(m => m.id !== id));
+  const handleDeleteMaterial = async (id: string) => {
+    await deleteDoc(doc(db, 'materials', id));
     setMaterialToDelete(null);
   };
 
@@ -77,8 +76,7 @@ export default function MaterialsPage() {
     );
   }
 
-  // Filter out any invalid material objects to prevent render crashes
-  const validMaterials = safeMaterials.filter(m => m && m.id && m.name);
+  const validMaterials = materials.filter(m => m && m.id && m.name);
 
   return (
     <>
@@ -186,7 +184,7 @@ export default function MaterialsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this material.
+              This action cannot be undone. This will permanently delete this material from the cloud.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

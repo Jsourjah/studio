@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import useLocalStorage from '@/hooks/use-local-storage';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, doc, deleteDoc, updateDoc, writeBatch, runTransaction, getDocs, query, orderBy } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -78,13 +79,9 @@ const statusStyles: { [key: string]: string } = {
 };
 
 export default function InvoicesPage() {
-  const [invoices, setInvoices] = useLocalStorage<Invoice[]>('invoices', []);
-  const [nextInvoiceId, setNextInvoiceId] = useLocalStorage<number>(
-    'nextInvoiceId',
-    101
-  );
-  const [materials, setMaterials] = useLocalStorage<Material[]>('materials', initialMaterials);
-  const [productBundles] = useLocalStorage<ProductBundle[]>('productBundles', initialProductBundles);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [productBundles, setProductBundles] = useState<ProductBundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
@@ -95,103 +92,110 @@ export default function InvoicesPage() {
   const viewPdfRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setLoading(false);
+    const q = query(collection(db, 'invoices'), orderBy('date', 'desc'));
+    const unsubscribeInvoices = onSnapshot(q, (snapshot) => {
+      setInvoices(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Invoice)));
+      setLoading(false);
+    });
+    const unsubscribeMaterials = onSnapshot(collection(db, 'materials'), (snapshot) => {
+      setMaterials(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Material)));
+    });
+    const unsubscribeProductBundles = onSnapshot(collection(db, 'productBundles'), (snapshot) => {
+      setProductBundles(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as ProductBundle)));
+    });
+
+    return () => {
+      unsubscribeInvoices();
+      unsubscribeMaterials();
+      unsubscribeProductBundles();
+    };
   }, []);
 
-  const safeInvoices = invoices || [];
-  const safeMaterials = materials || [];
-  const safeProductBundles = productBundles || [];
+  const handleAddInvoice = async (newInvoiceData: Omit<Invoice, 'id'>) => {
+    const counterRef = doc(db, 'counters', 'invoices');
+    let newId = '';
+    
+    await runTransaction(db, async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+      if (!counterDoc.exists()) {
+        await transaction.set(counterRef, { nextId: 101 });
+      }
+      const newNextId = (counterDoc.data()?.nextId || 101);
+      newId = String(newNextId).padStart(4, '0');
+      
+      const newInvoiceRef = doc(db, 'invoices', newId);
+      transaction.set(newInvoiceRef, newInvoiceData);
+      transaction.update(counterRef, { nextId: newNextId + 1 });
+    });
 
-  const handleAddInvoice = (newInvoiceData: Omit<Invoice, 'id'>) => {
-    const newId = String(nextInvoiceId).padStart(4, '0');
-    const newInvoice: Invoice = {
-      id: newId,
-      ...newInvoiceData,
-    };
-
-    // Deduct used materials from inventory
-    const updatedMaterials = [...safeMaterials];
-    let inventoryWasUpdated = false;
-
-    newInvoice.items.forEach(item => {
-      // If it's a product bundle, deduct its components
+    const inventoryBatch = writeBatch(db);
+    newInvoiceData.items.forEach(item => {
       if (item.productBundleId) {
-        const bundle = safeProductBundles.find(b => b.id === item.productBundleId);
+        const bundle = productBundles.find(b => b.id === item.productBundleId);
         if (bundle) {
           bundle.items.forEach(bundleItem => {
-            const materialIndex = updatedMaterials.findIndex(m => m.id === bundleItem.materialId);
-            if (materialIndex !== -1) {
+            const material = materials.find(m => m.id === bundleItem.materialId);
+            if (material) {
+              const materialRef = doc(db, 'materials', bundleItem.materialId);
               const quantityToDeduct = bundleItem.quantity * item.quantity;
-              const originalQuantity = updatedMaterials[materialIndex].quantity;
-              updatedMaterials[materialIndex].quantity = Math.max(0, originalQuantity - quantityToDeduct);
-              inventoryWasUpdated = true;
+              inventoryBatch.update(materialRef, { quantity: Math.max(0, material.quantity - quantityToDeduct) });
             }
           });
         }
-      } 
-      // If it's a direct material, deduct it
-      else if (item.materialId) {
-        const materialIndex = updatedMaterials.findIndex(m => m.id === item.materialId);
-        if (materialIndex !== -1) {
-          const originalQuantity = updatedMaterials[materialIndex].quantity;
-          updatedMaterials[materialIndex].quantity = Math.max(0, originalQuantity - item.quantity);
-          inventoryWasUpdated = true;
+      } else if (item.materialId) {
+        const material = materials.find(m => m.id === item.materialId);
+        if (material) {
+          const materialRef = doc(db, 'materials', item.materialId);
+          inventoryBatch.update(materialRef, { quantity: Math.max(0, material.quantity - item.quantity) });
         }
       }
     });
 
-    if (inventoryWasUpdated) {
-      setMaterials(updatedMaterials);
-    }
-    
-    setInvoices((prevInvoices) => [...(prevInvoices || []), newInvoice]);
-    setNextInvoiceId((prevId) => prevId + 1);
+    await inventoryBatch.commit();
     return newId;
   };
 
-  const seedData = () => {
+  const seedData = async () => {
     setIsSeeding(true);
-    let currentId = nextInvoiceId;
-    const seededInvoices = initialInvoices.map((invoice) => {
-      const newInvoice = {
-        ...invoice,
-        id: String(currentId).padStart(4, '0'),
-      };
-      currentId++;
-      return newInvoice;
+    const invoicesCollection = collection(db, 'invoices');
+    const snapshot = await getDocs(query(invoicesCollection));
+    if (!snapshot.empty) {
+      console.log('Invoices collection not empty, skipping seed.');
+      setIsSeeding(false);
+      return;
+    }
+
+    const batch = writeBatch(db);
+    let nextId = 101;
+    initialInvoices.forEach(invoice => {
+      const newId = String(nextId).padStart(4, '0');
+      const docRef = doc(db, 'invoices', newId);
+      batch.set(docRef, invoice);
+      nextId++;
     });
-    setInvoices(seededInvoices);
-    setNextInvoiceId(currentId);
+
+    const counterRef = doc(db, 'counters', 'invoices');
+    batch.set(counterRef, { nextId });
+
+    await batch.commit();
     setIsSeeding(false);
   };
 
-  const handleDeleteInvoice = (id: string) => {
-    setInvoices((prev) => (prev || []).filter((invoice) => invoice.id !== id));
+  const handleDeleteInvoice = async (id: string) => {
+    await deleteDoc(doc(db, 'invoices', id));
     setInvoiceToDelete(null);
   };
 
-  const handleUpdateStatus = (id: string, status: Invoice['status']) => {
-    setInvoices((prev) =>
-      (prev || []).map((invoice) =>
-        invoice.id === id ? { ...invoice, status } : invoice
-      )
-    );
+  const handleUpdateStatus = async (id: string, status: Invoice['status']) => {
+    await updateDoc(doc(db, 'invoices', id), { status });
   };
 
   const generateAndSavePdf = async (element: HTMLElement, fileName: string) => {
     if (!element) return;
     try {
-      const canvas = await html2canvas(element, {
-        scale: 4,
-        useCORS: true,
-      });
-      // Use JPEG format to significantly reduce file size
+      const canvas = await html2canvas(element, { scale: 4, useCORS: true });
       const imgData = canvas.toDataURL('image/jpeg', 0.9);
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: [288, 432],
-      });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: [288, 432] });
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
@@ -216,10 +220,7 @@ export default function InvoicesPage() {
   const handleDownloadFromView = async () => {
     if (invoiceToView && viewPdfRef.current) {
       setIsPrinting(true);
-      await generateAndSavePdf(
-        viewPdfRef.current,
-        `invoice-${invoiceToView.id}.pdf`
-      );
+      await generateAndSavePdf(viewPdfRef.current, `invoice-${invoiceToView.id}.pdf`);
       setIsPrinting(false);
     }
   };
@@ -232,13 +233,6 @@ export default function InvoicesPage() {
     );
   }
 
-  const sortedInvoices = [...safeInvoices].filter(Boolean).sort((a, b) => {
-      const timeA = a.date ? new Date(a.date).getTime() : 0;
-      const timeB = b.date ? new Date(b.date).getTime() : 0;
-      return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
-    }
-  );
-
   return (
     <>
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -247,13 +241,13 @@ export default function InvoicesPage() {
           <div className="flex items-center space-x-2">
             <AddInvoiceForm
               onAddInvoice={handleAddInvoice}
-              materials={safeMaterials}
-              productBundles={safeProductBundles}
+              materials={materials}
+              productBundles={productBundles}
             />
           </div>
         </div>
 
-        {safeInvoices.length === 0 ? (
+        {invoices.length === 0 ? (
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>No Invoices Found</CardTitle>
@@ -296,7 +290,7 @@ export default function InvoicesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedInvoices.map((invoice) => (
+                  {invoices.map((invoice) => (
                     <TableRow key={invoice.id}>
                       <TableCell className="font-medium">
                         {invoice.id}
@@ -410,7 +404,7 @@ export default function InvoicesPage() {
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the
-              invoice {invoiceToDelete} and remove its data from your browser.
+              invoice {invoiceToDelete} and remove its data from the cloud.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

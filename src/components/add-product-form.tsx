@@ -47,8 +47,8 @@ const productSchema = z.object({
 });
 
 type AddProductFormProps = {
-  onAddProduct: (newProduct: Omit<ProductBundle, 'id'>) => void;
-  onUpdateProduct: (updatedProduct: ProductBundle) => void;
+  onAddProduct: (newProduct: Omit<ProductBundle, 'id'>) => Promise<void>;
+  onUpdateProduct: (updatedProduct: ProductBundle) => Promise<void>;
   materials: Material[];
   productToEdit: ProductBundle | null;
   setProductToEdit: (product: ProductBundle | null) => void;
@@ -78,18 +78,18 @@ export function AddProductForm({ onAddProduct, onUpdateProduct, materials, produ
         items: [{ materialId: '', quantity: 1 }],
       });
     }
-  }, [productToEdit, form.reset]);
+  }, [productToEdit, form]);
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "items"
   });
 
-  function onSubmit(values: z.infer<typeof productSchema>) {
+  async function onSubmit(values: z.infer<typeof productSchema>) {
     if (isEditMode && productToEdit) {
-      onUpdateProduct({ ...values, id: productToEdit.id });
+      await onUpdateProduct({ ...values, id: productToEdit.id });
     } else {
-      onAddProduct(values);
+      await onAddProduct(values);
     }
     setOpen(false);
   }

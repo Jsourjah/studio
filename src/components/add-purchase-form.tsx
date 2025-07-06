@@ -54,7 +54,7 @@ const purchaseSchema = z.object({
 });
 
 type AddPurchaseFormProps = {
-  onAddPurchase: (newPurchase: Omit<Purchase, 'id' | 'totalAmount'>) => void;
+  onAddPurchase: (newPurchase: Omit<Purchase, 'id' | 'totalAmount'>) => Promise<void>;
 };
 
 export function AddPurchaseForm({ onAddPurchase }: AddPurchaseFormProps) {
@@ -78,12 +78,12 @@ export function AddPurchaseForm({ onAddPurchase }: AddPurchaseFormProps) {
   const watchedItems = form.watch('items');
   const totalAmount = watchedItems.reduce((acc, item) => acc + (item.quantity || 0) * (item.costPerUnit || 0), 0);
 
-  function onSubmit(values: z.infer<typeof purchaseSchema>) {
+  async function onSubmit(values: z.infer<typeof purchaseSchema>) {
     const purchaseData = {
       ...values,
       date: values.date.toISOString(),
     };
-    onAddPurchase(purchaseData);
+    await onAddPurchase(purchaseData);
     form.reset({
       supplier: '',
       date: new Date(),

@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import useLocalStorage from '@/hooks/use-local-storage';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, doc, deleteDoc, writeBatch, runTransaction, getDocs, query, orderBy, where, getDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -39,7 +40,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Database, MoreHorizontal, Trash2 } from 'lucide-react';
-import { purchases as initialPurchases } from '@/lib/data';
+import { purchases as initialPurchases, initialMaterials } from '@/lib/data';
 import type { Purchase, Material } from '@/lib/types';
 import { format } from 'date-fns';
 import { AddPurchaseForm } from '@/components/add-purchase-form';
@@ -54,84 +55,114 @@ const statusStyles: { [key: string]: string } = {
 };
 
 export default function PurchasesPage() {
-  const [purchases, setPurchases] = useLocalStorage<Purchase[]>('purchases', []);
-  const [nextPurchaseId, setNextPurchaseId] = useLocalStorage<number>('nextPurchaseId', 100);
-  const [materials, setMaterials] = useLocalStorage<Material[]>('materials', []);
-  const [nextMaterialId, setNextMaterialId] = useLocalStorage<number>('nextMaterialId', 100);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
   const [purchaseToDelete, setPurchaseToDelete] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(false);
+    const q = query(collection(db, 'purchases'), orderBy('date', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setPurchases(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Purchase)));
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
-  const safePurchases = purchases || [];
+  const handleAddPurchase = async (newPurchaseData: Omit<Purchase, 'id' | 'totalAmount'>) => {
+    const batch = writeBatch(db);
 
-  const handleAddPurchase = (newPurchaseData: Omit<Purchase, 'id' | 'totalAmount'>) => {
-    // If purchase is completed, update the material stock
     if (newPurchaseData.status === 'completed') {
-        const updatedMaterials: Material[] = materials ? [...materials] : [];
-        let currentMaterialId = nextMaterialId;
+      const materialsRef = collection(db, "materials");
+      let nextMaterialId = 100;
+      const counterRef = doc(db, 'counters', 'materials');
+      const counterDoc = await getDoc(counterRef);
+      if (counterDoc.exists()) {
+        nextMaterialId = counterDoc.data().nextId;
+      }
 
-        newPurchaseData.items.forEach(item => {
-            const materialIndex = updatedMaterials.findIndex(m => m.name.trim().toLowerCase() === item.materialName.trim().toLowerCase());
-
-            if (materialIndex !== -1) {
-                // Existing material: update quantity and cost
-                updatedMaterials[materialIndex].quantity += item.quantity;
-                updatedMaterials[materialIndex].costPerUnit = item.costPerUnit;
-            } else {
-                // New material: add to inventory
-                const newMaterial: Material = {
-                    id: `M${String(currentMaterialId).padStart(3, '0')}`,
-                    name: item.materialName.trim(),
-                    quantity: item.quantity,
-                    costPerUnit: item.costPerUnit,
-                };
-                updatedMaterials.push(newMaterial);
-                currentMaterialId++;
-            }
-        });
-        setMaterials(updatedMaterials);
-        setNextMaterialId(currentMaterialId);
+      for (const item of newPurchaseData.items) {
+          const q = query(materialsRef, where("name", "==", item.materialName.trim()));
+          const snapshot = await getDocs(q);
+          
+          if (!snapshot.empty) {
+              const existingMaterialDoc = snapshot.docs[0];
+              const existingMaterial = existingMaterialDoc.data() as Material;
+              const docRef = doc(db, "materials", existingMaterialDoc.id);
+              batch.update(docRef, { 
+                quantity: existingMaterial.quantity + item.quantity,
+                costPerUnit: item.costPerUnit 
+              });
+          } else {
+              const newMaterialId = `M${String(nextMaterialId).padStart(3, '0')}`;
+              const docRef = doc(db, "materials", newMaterialId);
+              batch.set(docRef, { 
+                  name: item.materialName.trim(), 
+                  quantity: item.quantity, 
+                  costPerUnit: item.costPerUnit 
+              });
+              nextMaterialId++;
+          }
+      }
+      batch.set(counterRef, { nextId: nextMaterialId }, { merge: true });
     }
     
-    // Create the new purchase record
-    const totalAmount = newPurchaseData.items.reduce((sum, item) => sum + (item.quantity * item.costPerUnit), 0);
-    const newId = `PO${String(nextPurchaseId).padStart(3, '0')}`;
-    const newPurchase: Purchase = {
-        id: newId,
-        supplier: newPurchaseData.supplier,
-        items: newPurchaseData.items,
-        status: newPurchaseData.status,
- date: new Date(newPurchaseData.date).toISOString(),
-        totalAmount,
-    };
-    
-    setPurchases(prev => [...(prev || []), newPurchase]);
-    setNextPurchaseId(prevId => prevId + 1);
+    const purchaseCounterRef = doc(db, 'counters', 'purchases');
+    let newId = '';
+    await runTransaction(db, async transaction => {
+      const counterDoc = await transaction.get(purchaseCounterRef);
+      if (!counterDoc.exists()) {
+        await transaction.set(purchaseCounterRef, { nextId: 100 });
+      }
+      const newNextId = (counterDoc.data()?.nextId || 100);
+      newId = `PO${String(newNextId).padStart(3, '0')}`;
+      const totalAmount = newPurchaseData.items.reduce((sum, item) => sum + (item.quantity * item.costPerUnit), 0);
+      const newPurchaseRef = doc(db, 'purchases', newId);
+      transaction.set(newPurchaseRef, { ...newPurchaseData, totalAmount });
+      transaction.update(purchaseCounterRef, { nextId: newNextId + 1 });
+    });
+
+    await batch.commit();
   };
 
-  const handleDeletePurchase = (id: string) => {
-    // Note: Deleting a purchase does not currently revert inventory changes.
-    setPurchases(prev => (prev || []).filter(p => p.id !== id));
+  const handleDeletePurchase = async (id: string) => {
+    await deleteDoc(doc(db, 'purchases', id));
     setPurchaseToDelete(null);
   };
 
-  const seedData = () => {
+  const seedData = async () => {
     setIsSeeding(true);
-    let currentId = nextPurchaseId;
-    const seededPurchases = initialPurchases.map(purchase => {
-      const newPurchase = {
-        ...purchase,
-        id: `PO${String(currentId).padStart(3, '0')}`,
-      };
-      currentId++;
-      return newPurchase;
-    });
-    setPurchases(seededPurchases);
-    setNextPurchaseId(currentId);
+    // Seed Purchases
+    const purchasesRef = collection(db, 'purchases');
+    let pSnapshot = await getDocs(query(purchasesRef));
+    if (pSnapshot.empty) {
+      const pBatch = writeBatch(db);
+      let nextPId = 100;
+      initialPurchases.forEach(p => {
+        const newId = `PO${String(nextPId).padStart(3, '0')}`;
+        pBatch.set(doc(db, 'purchases', newId), p);
+        nextPId++;
+      });
+      pBatch.set(doc(db, 'counters', 'purchases'), { nextId: nextPId });
+      await pBatch.commit();
+    }
+    
+    // Seed Materials (if empty)
+    const materialsRef = collection(db, 'materials');
+    let mSnapshot = await getDocs(query(materialsRef));
+    if(mSnapshot.empty) {
+        const mBatch = writeBatch(db);
+        let nextMId = 100;
+        initialMaterials.forEach(m => {
+            const newId = `M${String(nextMId).padStart(3, '0')}`;
+            const {id, ...data} = m;
+            mBatch.set(doc(db, 'materials', newId), data);
+            nextMId++;
+        });
+        mBatch.set(doc(db, 'counters', 'materials'), { nextId: nextMId });
+        await mBatch.commit();
+    }
+
     setIsSeeding(false);
   };
 
@@ -142,12 +173,6 @@ export default function PurchasesPage() {
       </div>
     );
   }
-
-  const sortedPurchases = [...safePurchases].filter(Boolean).sort((a, b) => {
-    const timeA = a.date ? new Date(a.date).getTime() : 0;
-    const timeB = b.date ? new Date(b.date).getTime() : 0;
-    return (isNaN(timeB) ? 0 : timeB) - (isNaN(timeA) ? 0 : timeA);
-  });
 
   return (
     <>
@@ -161,7 +186,7 @@ export default function PurchasesPage() {
           </div>
         </div>
 
-        {safePurchases.length === 0 ? (
+        {purchases.length === 0 ? (
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>No Purchases Found</CardTitle>
@@ -177,7 +202,7 @@ export default function PurchasesPage() {
                 ) : (
                   <Database className="mr-2 h-4 w-4" />
                 )}
-                Load Sample Purchases
+                Load Sample Data
               </Button>
             </CardContent>
           </Card>
@@ -205,7 +230,7 @@ export default function PurchasesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedPurchases.map((purchase) => (
+                  {purchases.map((purchase) => (
                     <TableRow key={purchase.id}>
                       <TableCell className="font-medium">{purchase.id}</TableCell>
                       <TableCell>{purchase.supplier}</TableCell>
@@ -272,7 +297,7 @@ export default function PurchasesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this purchase record. Deleting a purchase will not revert inventory changes.
+              This action cannot be undone. This will permanently delete this purchase record from the cloud. Deleting a purchase will not revert inventory changes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

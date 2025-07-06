@@ -1,7 +1,9 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import useLocalStorage from '@/hooks/use-local-storage';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 import {
   Table,
   TableBody,
@@ -12,86 +14,100 @@ import {
   TableFooter,
 } from '@/components/ui/table';
 import type { Invoice, Material, Purchase, ProductBundle } from '@/lib/types';
-import { initialProductBundles } from '@/lib/data';
 import { isThisMonth } from 'date-fns';
 import { ReportGenerator } from '@/components/report-generator';
 import { Loader2 } from 'lucide-react';
 import { getCostOfInvoice } from '@/lib/calculations';
 
 export default function ReportsPage() {
-  const [invoices] = useLocalStorage<Invoice[]>('invoices', []);
-  const [materials] = useLocalStorage<Material[]>('materials', []);
-  const [purchases] = useLocalStorage<Purchase[]>('purchases', []);
-  const [productBundles] = useLocalStorage<ProductBundle[]>(
-    'productBundles',
-    initialProductBundles
-  );
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [productBundles, setProductBundles] = useState<ProductBundle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(false);
+    const unsubscribes = [
+      onSnapshot(collection(db, 'invoices'), snapshot => 
+        setInvoices(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Invoice)))
+      ),
+      onSnapshot(collection(db, 'materials'), snapshot => 
+        setMaterials(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Material)))
+      ),
+      onSnapshot(collection(db, 'purchases'), snapshot => 
+        setPurchases(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Purchase)))
+      ),
+      onSnapshot(collection(db, 'productBundles'), snapshot => 
+        setProductBundles(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as ProductBundle)))
+      ),
+    ];
+    
+    // Consider loading finished once all initial data snapshots are received
+    Promise.all(unsubscribes.map(unsub => new Promise(resolve => {
+        const tempUnsub = onSnapshot(collection(db, 'invoices'), () => {
+            resolve(true);
+            tempUnsub();
+        });
+    }))).then(() => setLoading(false));
+
+    return () => unsubscribes.forEach(unsub => unsub());
   }, []);
-
-  const safeInvoices = invoices || [];
-  const safeMaterials = materials || [];
-  const safePurchases = purchases || [];
-  const safeProductBundles = productBundles || [];
-
-  const totalRevenue = safeInvoices.reduce(
+  
+  const totalRevenue = invoices.reduce(
     (sum, invoice) => sum + (invoice?.amount || 0),
     0
   );
 
-  const collectedRevenue = safeInvoices
+  const collectedRevenue = invoices
     .filter((invoice) => invoice && invoice.status === 'paid')
     .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
 
-  const outstandingRevenue = safeInvoices
+  const outstandingRevenue = invoices
     .filter(
       (invoice) =>
         invoice && (invoice.status === 'unpaid' || invoice.status === 'overdue')
     )
     .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
 
-  const totalInventoryValue = safeMaterials.reduce(
+  const totalInventoryValue = materials.reduce(
     (sum, material) =>
       sum + (material?.quantity || 0) * (material?.costPerUnit || 0),
     0
   );
 
-  const totalPurchaseAmount = safePurchases
+  const totalPurchaseAmount = purchases
     .filter((purchase) => purchase && purchase.status === 'completed')
     .reduce((sum, purchase) => sum + (purchase.totalAmount || 0), 0);
 
-  const totalCogs = safeInvoices.reduce(
-    (sum, invoice) => sum + getCostOfInvoice(invoice, safeMaterials, safeProductBundles),
+  const totalCogs = invoices.reduce(
+    (sum, invoice) => sum + getCostOfInvoice(invoice, materials, productBundles),
     0
   );
 
-  const cogsForPaidInvoices = safeInvoices
+  const cogsForPaidInvoices = invoices
     .filter((i) => i.status === 'paid')
-    .reduce((sum, invoice) => sum + getCostOfInvoice(invoice, safeMaterials, safeProductBundles), 0);
+    .reduce((sum, invoice) => sum + getCostOfInvoice(invoice, materials, productBundles), 0);
 
   const grossProfit = collectedRevenue - cogsForPaidInvoices;
 
-  const cogsThisMonth = safeInvoices
+  const cogsThisMonth = invoices
     .filter((i) => i.date && !isNaN(new Date(i.date).getTime()) && isThisMonth(new Date(i.date)))
-    .reduce((sum, invoice) => sum + getCostOfInvoice(invoice, safeMaterials, safeProductBundles), 0);
+    .reduce((sum, invoice) => sum + getCostOfInvoice(invoice, materials, productBundles), 0);
 
   // Data for Invoice Summary Table
-  const paidInvoices = safeInvoices.filter(i => i.status === 'paid');
-  const unpaidInvoices = safeInvoices.filter(i => i.status === 'unpaid' || i.status === 'overdue');
+  const paidInvoices = invoices.filter(i => i.status === 'paid');
+  const unpaidInvoices = invoices.filter(i => i.status === 'unpaid' || i.status === 'overdue');
   const paidAmount = paidInvoices.reduce((sum, i) => sum + i.amount, 0);
   const unpaidAmount = unpaidInvoices.reduce((sum, i) => sum + i.amount, 0);
 
   // Data for Material Usage Table
-  const materialTotalUsage = safeInvoices.reduce((acc, invoice) => {
+  const materialTotalUsage = invoices.reduce((acc, invoice) => {
     if (invoice && Array.isArray(invoice.items)) {
       invoice.items.forEach(item => {
         if (item.materialId) {
           acc[item.materialId] = (acc[item.materialId] || 0) + item.quantity;
         } else if (item.productBundleId) {
-          const bundle = safeProductBundles.find(b => b.id === item.productBundleId);
+          const bundle = productBundles.find(b => b.id === item.productBundleId);
           if (bundle && Array.isArray(bundle.items)) {
             bundle.items.forEach(bundleItem => {
               const totalQuantity = bundleItem.quantity * item.quantity;
@@ -104,14 +120,14 @@ export default function ReportsPage() {
     return acc;
   }, {} as { [materialId: string]: number });
 
-  const materialInvoiceCounts = safeInvoices.reduce((acc, invoice) => {
+  const materialInvoiceCounts = invoices.reduce((acc, invoice) => {
       const materialsInThisInvoice = new Set<string>();
       if (invoice && Array.isArray(invoice.items)) {
           invoice.items.forEach(item => {
               if (item.materialId) {
                   materialsInThisInvoice.add(item.materialId);
               } else if (item.productBundleId) {
-                  const bundle = safeProductBundles.find(b => b.id === item.productBundleId);
+                  const bundle = productBundles.find(b => b.id === item.productBundleId);
                   if (bundle && Array.isArray(bundle.items)) {
                       bundle.items.forEach(bundleItem => {
                           materialsInThisInvoice.add(bundleItem.materialId);
@@ -127,7 +143,7 @@ export default function ReportsPage() {
     }, {} as { [materialId: string]: number });
 
   const materialUsageReportData = Object.keys(materialInvoiceCounts).map(materialId => {
-    const material = safeMaterials.find(m => m.id === materialId);
+    const material = materials.find(m => m.id === materialId);
     return {
       name: material ? material.name : 'Unknown Material',
       invoiceCount: materialInvoiceCounts[materialId] || 0,
@@ -136,7 +152,7 @@ export default function ReportsPage() {
   }).sort((a, b) => b.invoiceCount - a.invoiceCount);
 
   // Data for Purchase Summary Table
-  const purchaseSummary = safePurchases
+  const purchaseSummary = purchases
     .filter(p => p.status === 'completed' && Array.isArray(p.items))
     .reduce((acc, purchase) => {
         purchase.items.forEach(item => {
@@ -175,7 +191,7 @@ export default function ReportsPage() {
         paidAmount,
         unpaidCount: unpaidInvoices.length,
         unpaidAmount,
-        totalCount: safeInvoices.length,
+        totalCount: invoices.length,
         totalAmount: totalRevenue,
     },
     purchaseSummary: purchaseReportData,
@@ -247,7 +263,7 @@ export default function ReportsPage() {
                 <TableFooter>
                     <TableRow>
                     <TableHead>Total</TableHead>
-                    <TableHead className="text-center">{safeInvoices.length}</TableHead>
+                    <TableHead className="text-center">{invoices.length}</TableHead>
                     <TableHead className="text-right">Rs.{totalRevenue.toFixed(2)}</TableHead>
                     </TableRow>
                 </TableFooter>

@@ -65,7 +65,7 @@ const invoiceSchema = z.object({
 });
 
 type AddInvoiceFormProps = {
-  onAddInvoice: (newInvoice: Omit<Invoice, 'id'>) => string;
+  onAddInvoice: (newInvoice: Omit<Invoice, 'id'>) => Promise<string>;
   materials: Material[];
   productBundles: ProductBundle[];
 };
@@ -150,9 +150,9 @@ export function AddInvoiceForm({ onAddInvoice, materials, productBundles }: AddI
   }, [invoiceToPrint]);
 
 
-  function onSubmit(values: z.infer<typeof invoiceSchema>) {
+  async function onSubmit(values: z.infer<typeof invoiceSchema>) {
     const amount = values.items.reduce((sum, item) => sum + (item.quantity * item.price), 0);
-    const newId = onAddInvoice({
+    const newId = await onAddInvoice({
       ...values,
       date: values.date.toISOString(),
       amount,

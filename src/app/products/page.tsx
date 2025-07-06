@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import useLocalStorage from '@/hooks/use-local-storage';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, doc, deleteDoc, updateDoc, writeBatch, runTransaction, getDocs, query } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -38,67 +39,88 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Loader2, Database, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
-import { initialProductBundles, initialMaterials } from '@/lib/data';
+import { initialProductBundles } from '@/lib/data';
 import type { ProductBundle, Material } from '@/lib/types';
 import { AddProductForm } from '@/components/add-product-form';
 import { Badge } from '@/components/ui/badge';
 
 export default function ProductsPage() {
-  const [productBundles, setProductBundles] = useLocalStorage<ProductBundle[]>('productBundles', []);
-  const [nextProductId, setNextProductId] = useLocalStorage<number>('nextProductId', 100);
-  const [materials] = useLocalStorage<Material[]>('materials', []);
+  const [productBundles, setProductBundles] = useState<ProductBundle[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSeeding, setIsSeeding] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [productToEdit, setProductToEdit] = useState<ProductBundle | null>(null);
 
   useEffect(() => {
-    setLoading(false);
+    const unsubscribeProducts = onSnapshot(collection(db, 'productBundles'), (snapshot) => {
+      setProductBundles(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as ProductBundle)));
+      setLoading(false);
+    });
+    const unsubscribeMaterials = onSnapshot(collection(db, 'materials'), (snapshot) => {
+      setMaterials(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Material)));
+    });
+
+    return () => {
+      unsubscribeProducts();
+      unsubscribeMaterials();
+    };
   }, []);
 
-  const safeProductBundles = productBundles || [];
-  const safeMaterials = materials || [];
-
-  const handleAddProduct = (newProductData: Omit<ProductBundle, 'id'>) => {
-    const newId = `P${String(nextProductId).padStart(3, '0')}`;
-    const newProduct: ProductBundle = {
-      id: newId,
-      ...newProductData,
-    };
-    setProductBundles(prev => [...(prev || []), newProduct]);
-    setNextProductId(prevId => prevId + 1);
+  const handleAddProduct = async (newProductData: Omit<ProductBundle, 'id'>) => {
+    const counterRef = doc(db, 'counters', 'productBundles');
+    await runTransaction(db, async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+      if (!counterDoc.exists()) {
+        await transaction.set(counterRef, { nextId: 100 });
+      }
+      const newNextId = (counterDoc.data()?.nextId || 100);
+      const newId = `P${String(newNextId).padStart(3, '0')}`;
+      const newProductRef = doc(db, 'productBundles', newId);
+      transaction.set(newProductRef, newProductData);
+      transaction.update(counterRef, { nextId: newNextId + 1 });
+    });
   };
   
-  const handleUpdateProduct = (updatedProduct: ProductBundle) => {
-    setProductBundles(prev => 
-      (prev || []).map(p => p.id === updatedProduct.id ? updatedProduct : p)
-    );
+  const handleUpdateProduct = async (updatedProduct: ProductBundle) => {
+    const { id, ...data } = updatedProduct;
+    await updateDoc(doc(db, 'productBundles', id), data);
     setProductToEdit(null);
   };
 
-  const handleDeleteProduct = (id: string) => {
-    setProductBundles(prev => (prev || []).filter(p => p.id !== id));
+  const handleDeleteProduct = async (id: string) => {
+    await deleteDoc(doc(db, 'productBundles', id));
     setProductToDelete(null);
   };
   
-  const seedData = () => {
+  const seedData = async () => {
     setIsSeeding(true);
-    let currentId = nextProductId;
-    const seededProducts = initialProductBundles.map((bundle) => {
-      const newProduct = {
-        ...bundle,
-        id: `P${String(currentId).padStart(3, '0')}`,
-      };
-      currentId++;
-      return newProduct;
+    const collectionRef = collection(db, 'productBundles');
+    const snapshot = await getDocs(query(collectionRef));
+    if (!snapshot.empty) {
+      console.log('Product Bundles collection not empty, skipping seed.');
+      setIsSeeding(false);
+      return;
+    }
+
+    const batch = writeBatch(db);
+    let nextId = 100;
+    initialProductBundles.forEach(bundle => {
+      const newId = `P${String(nextId).padStart(3, '0')}`;
+      const docRef = doc(db, 'productBundles', newId);
+      batch.set(docRef, { ...bundle, id: newId });
+      nextId++;
     });
-    setProductBundles(seededProducts);
-    setNextProductId(currentId);
+
+    const counterRef = doc(db, 'counters', 'productBundles');
+    batch.set(counterRef, { nextId });
+
+    await batch.commit();
     setIsSeeding(false);
   };
   
   const getMaterialName = (id: string) => {
-    return safeMaterials.find(m => m.id === id)?.name || 'Unknown Material';
+    return materials.find(m => m.id === id)?.name || 'Unknown Material';
   };
 
   if (loading) {
@@ -117,7 +139,7 @@ export default function ProductsPage() {
           <div className="flex items-center space-x-2">
             <AddProductForm 
               onAddProduct={handleAddProduct} 
-              materials={safeMaterials}
+              materials={materials}
               onUpdateProduct={handleUpdateProduct}
               productToEdit={productToEdit}
               setProductToEdit={setProductToEdit}
@@ -125,7 +147,7 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {safeProductBundles.length === 0 ? (
+        {productBundles.length === 0 ? (
            <Card className="mt-6">
             <CardHeader>
               <CardTitle>No Products Found</CardTitle>
@@ -164,7 +186,7 @@ export default function ProductsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {safeProductBundles.filter(Boolean).map((bundle, index) => (
+                  {productBundles.filter(Boolean).map((bundle, index) => (
                       <TableRow key={bundle.id || index}>
                           <TableCell className="font-medium">{bundle.id}</TableCell>
                           <TableCell className="font-medium">{bundle.name || 'N/A'}</TableCell>
@@ -222,7 +244,7 @@ export default function ProductsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete this product.
+              This action cannot be undone. This will permanently delete this product from the cloud.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

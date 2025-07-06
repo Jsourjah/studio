@@ -2,7 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import useLocalStorage from '@/hooks/use-local-storage';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -30,7 +31,7 @@ import {
 import type { Invoice, Material, ProductBundle, Purchase } from '@/lib/types';
 import { format } from 'date-fns';
 import { getCostOfInvoice } from '@/lib/calculations';
-import { initialProductBundles, monthlySummary } from '@/lib/data';
+import { monthlySummary } from '@/lib/data';
 import { DashboardChart } from '@/components/dashboard-chart';
 import { RevenueChart } from '@/components/revenue-chart';
 import type { ChartConfig } from '@/components/ui/chart';
@@ -43,52 +44,66 @@ const slugify = (str: string) =>
 
 
 export default function Dashboard() {
-  const [invoices] = useLocalStorage<Invoice[]>('invoices', []);
-  const [materials] = useLocalStorage<Material[]>('materials', []);
-  const [purchases] = useLocalStorage<Purchase[]>('purchases', []);
-  const [productBundles] = useLocalStorage<ProductBundle[]>(
-    'productBundles',
-    initialProductBundles
-  );
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [productBundles, setProductBundles] = useState<ProductBundle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(false);
+    const unsubscribes = [
+      onSnapshot(collection(db, 'invoices'), (snapshot) => {
+        setInvoices(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Invoice)));
+      }),
+      onSnapshot(collection(db, 'materials'), (snapshot) => {
+        setMaterials(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Material)));
+      }),
+      onSnapshot(collection(db, 'purchases'), (snapshot) => {
+        setPurchases(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Purchase)));
+      }),
+      onSnapshot(collection(db, 'productBundles'), (snapshot) => {
+        setProductBundles(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as ProductBundle)));
+      }),
+    ];
+
+    Promise.all([
+        new Promise(resolve => onSnapshot(collection(db, 'invoices'), resolve)),
+        new Promise(resolve => onSnapshot(collection(db, 'materials'), resolve)),
+        new Promise(resolve => onSnapshot(collection(db, 'purchases'), resolve)),
+        new Promise(resolve => onSnapshot(collection(db, 'productBundles'), resolve)),
+    ]).then(() => setLoading(false));
+
+    return () => unsubscribes.forEach(unsub => unsub());
   }, []);
-
-  const safeInvoices = invoices || [];
-  const safeMaterials = materials || [];
-  const safePurchases = purchases || [];
-  const safeProductBundles = productBundles || [];
-
+  
   // Calculations for summary cards
-  const totalRevenue = safeInvoices.reduce(
+  const totalRevenue = invoices.reduce(
     (sum, invoice) => sum + (invoice?.amount || 0),
     0
   );
 
-  const collectedRevenue = safeInvoices
+  const collectedRevenue = invoices
     .filter((invoice) => invoice && invoice.status === 'paid')
     .reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
 
-  const cogsForPaidInvoices = safeInvoices
+  const cogsForPaidInvoices = invoices
     .filter((i) => i.status === 'paid')
     .reduce(
       (sum, invoice) =>
-        sum + getCostOfInvoice(invoice, safeMaterials, safeProductBundles),
+        sum + getCostOfInvoice(invoice, materials, productBundles),
       0
     );
 
   const grossProfit = collectedRevenue - cogsForPaidInvoices;
   
-  const totalCustomers = new Set(safeInvoices.map(i => i.customer)).size;
+  const totalCustomers = new Set(invoices.map(i => i.customer)).size;
 
-  const totalPurchases = safePurchases
+  const totalPurchases = purchases
     .filter((purchase) => purchase && purchase.status === 'completed')
     .reduce((sum, purchase) => sum + (purchase.totalAmount || 0), 0);
 
   // Data for unpaid invoices table
-  const unpaidInvoices = [...safeInvoices]
+  const unpaidInvoices = [...invoices]
     .filter(
       (invoice) =>
         invoice && (invoice.status === 'unpaid' || invoice.status === 'overdue')
@@ -108,7 +123,7 @@ export default function Dashboard() {
   };
 
   // Data for inventory chart
-  const inventoryChartData = safeMaterials
+  const inventoryChartData = materials
     .map((m) => ({
       name: m.name,
       value: (m.quantity || 0) * (m.costPerUnit || 0),
@@ -118,7 +133,6 @@ export default function Dashboard() {
     .sort((a, b) => b.value - a.value)
     .slice(0, 5);
 
-  // Define specific colors for your material categories here
   const categoryColorMap: { [key: string]: string } = {
     "Laminating Sheet": "hsl(var(--chart-3))",
     "A4 Paper": "hsl(var(--chart-4))",
@@ -127,7 +141,6 @@ export default function Dashboard() {
     "Plywood Sheets": "hsl(var(--chart-2))",
     "Copper Wiring (ft)": "hsl(var(--chart-1))",
     "PVC Pipes": "hsl(var(--chart-2))",
-    // Add more material names and their desired colors here.
   };
 
   const inventoryChartConfig = {
@@ -137,19 +150,17 @@ export default function Dashboard() {
     ...inventoryChartData.reduce((acc, item, index) => {
       acc[item.slug] = {
         label: item.name,
-        // Use the color from the map, or fall back to a default cycle of 5 colors
         color: categoryColorMap[item.name] || `hsl(var(--chart-${(index % 5) + 1}))`,
       };
       return acc;
     }, {} as { [key: string]: any }),
   } satisfies ChartConfig;
   
-   // Data for Top Products
-  const topProducts = [...safeInvoices]
+   const topProducts = [...invoices]
     .flatMap(invoice => invoice.items || [])
     .filter(item => item.productBundleId)
     .reduce((acc, item) => {
-      const bundle = safeProductBundles.find(b => b.id === item.productBundleId);
+      const bundle = productBundles.find(b => b.id === item.productBundleId);
       if (bundle) {
         if (!acc[bundle.name]) {
           acc[bundle.name] = 0;
